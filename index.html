@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR im Browser</title>
+</head>
+<body>
+    <h1>OCR mit Tesseract.js</h1>
+    <input type="file" id="upload">
+    <button onclick="runOCR()">Erkennen</button>
+    <p id="output"></p>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
+    <script>
+        function runOCR() {
+            let file = document.getElementById('upload').files[0];
+            let reader = new FileReader();
+
+            reader.onload = function() {
+                Tesseract.recognize(
+                    reader.result,
+                    'eng',
+                    {
+                        logger: m => console.log(m)
+                    }
+                ).then(({ data: { text } }) => {
+                    document.getElementById('output').innerText = text;
+                });
+            };
+
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
+</body>
+</html>
