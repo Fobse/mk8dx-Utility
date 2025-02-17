@@ -1,9 +1,13 @@
 function performOCR() {
     let fileInput = document.getElementById("imageInput");
-    let output = document.getElementById("output");
+    let playerList = document.getElementById("playerList");
+    let teamScoresList = document.getElementById("teamScores");
+
+    playerList.innerHTML = ""; // Alte Werte löschen
+    teamScoresList.innerHTML = "";
 
     if (fileInput.files.length === 0) {
-        output.innerText = "Bitte ein Bild hochladen!";
+        alert("Bitte ein Bild hochladen!");
         return;
     }
 
@@ -17,15 +21,45 @@ function performOCR() {
         img.onload = function () {
             Tesseract.recognize(
                 img,
-                'eng', // Sprache (du kannst 'deu' für Deutsch nutzen)
-                {
-                    logger: m => console.log(m) // Fortschritt in der Konsole sehen
-                }
+                'eng', // Sprache: 'eng' oder 'deu' falls nötig
+                { logger: m => console.log(m) } // Fortschritt in der Konsole sehen
             ).then(({ data: { text } }) => {
-                output.innerText = text; // Zeigt den erkannten Text an
+                let lines = text.split("\n").filter(line => line.trim() !== ""); // Leere Zeilen entfernen
+                
+                // Punkte-Tabelle für Platzierungen
+                let placementPoints = [15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+
+                let teamScores = {}; // Speichert die Gesamtpunkte pro Team
+                
+                lines.forEach((player, index) => {
+                    if (index < placementPoints.length) { // Nur die ersten 12 Spieler zählen
+                        let cleanName = player.trim();
+                        let points = placementPoints[index];
+
+                        // Erster Buchstabe des Namens als Team-Tag
+                        let teamTag = cleanName[0];
+
+                        // Punkte zum Team addieren
+                        if (!teamScores[teamTag]) {
+                            teamScores[teamTag] = 0;
+                        }
+                        teamScores[teamTag] += points;
+
+                        // Spieler-Liste in HTML ausgeben
+                        let li = document.createElement("li");
+                        li.textContent = `${cleanName} → ${points} Punkte`;
+                        playerList.appendChild(li);
+                    }
+                });
+
+                // Team-Ergebnisse anzeigen
+                for (let team in teamScores) {
+                    let li = document.createElement("li");
+                    li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
+                    teamScoresList.appendChild(li);
+                }
             }).catch(err => {
-                output.innerText = "Fehler bei der Erkennung!";
-                console.error(err);
+                console.error("Fehler bei der Texterkennung:", err);
             });
         };
     };
