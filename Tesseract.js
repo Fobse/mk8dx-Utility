@@ -1,4 +1,4 @@
-  function performOCR() {
+function performOCR() {
             let fileInput = document.getElementById("imageInput");
             let playerList = document.getElementById("playerList");
             let teamScoresList = document.getElementById("teamScores");
@@ -72,7 +72,7 @@
 
                         Tesseract.recognize(
                             roiCanvasTemp.toDataURL(),
-                            'eng', { tessedit_pageseg_mode: 6 }
+                            'eng',
                             { logger: m => console.log(m) }
                         ).then(({ data: { text } }) => {
                             let cleanName = text.trim();
