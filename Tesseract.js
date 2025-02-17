@@ -1,4 +1,4 @@
-function performOCR() 
+function performOCR() {
             let fileInput = document.getElementById("imageInput");
             let playerList = document.getElementById("playerList");
             let teamScoresList = document.getElementById("teamScores");
@@ -118,7 +118,7 @@ function performOCR()
             };
 
             reader.readAsDataURL(file);
-        
+}
     </script>
 </body>
 </html>
