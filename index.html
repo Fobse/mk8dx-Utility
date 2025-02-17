@@ -3,22 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OCR Web-App</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
-    <script defer src="Tesseract.js"></script>
-    <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+    <title>OCR Scoreboard</title>
 </head>
 <body>
-    <h2>OCR Web-App (Läuft im Browser!)</h2>
-    <input type="file" id="imageInput">
-    <button onclick="performOCR()">Texterkennung starten</button>
-    <h3>Erkannt:</h3>
-    <p id="output"></p>
-     
-    <h3>Erkannte Spieler:</h3>
+    <h2>Bild hochladen</h2>
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="performOCR()">OCR starten</button>
+    
+    <h3>Spieler & Punkte</h3>
     <ul id="playerList"></ul>
     
-    <h3>Team-Gesamtpunkte:</h3>
+    <h3>Team-Ergebnisse</h3>
     <ul id="teamScores"></ul>
 
     <h3>ROI-Anzeige auf Originalbild</h3>
@@ -26,6 +21,9 @@
 
     <h3>Verarbeitete ROIs (Graustufen + Blur)</h3>
     <canvas id="processedRoiCanvas"></canvas>
-    
-</body>
-</html>
+
+    <!-- OpenCV.js & Tesseract.js -->
+    <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js"></script>
+
+    <script>
