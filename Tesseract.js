@@ -72,7 +72,7 @@
 
                         Tesseract.recognize(
                             roiCanvasTemp.toDataURL(),
-                            'eng',
+                            'eng', { tessedit_pageseg_mode: 6 }
                             { logger: m => console.log(m) }
                         ).then(({ data: { text } }) => {
                             let cleanName = text.trim();
