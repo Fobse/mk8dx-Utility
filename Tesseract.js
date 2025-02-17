@@ -1,9 +1,11 @@
-        function performOCR() {
+  function performOCR() {
             let fileInput = document.getElementById("imageInput");
             let playerList = document.getElementById("playerList");
             let teamScoresList = document.getElementById("teamScores");
-            let canvas = document.getElementById("outputCanvas");
-            let ctx = canvas.getContext("2d");
+            let roiCanvas = document.getElementById("roiCanvas");
+            let processedRoiCanvas = document.getElementById("processedRoiCanvas");
+            let roiCtx = roiCanvas.getContext("2d");
+            let processedRoiCtx = processedRoiCanvas.getContext("2d");
 
             playerList.innerHTML = "";
             teamScoresList.innerHTML = "";
@@ -21,11 +23,15 @@
                 img.src = reader.result;
 
                 img.onload = function () {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    // Setze Canvas-Größe auf Bildgröße
+                    roiCanvas.width = img.width;
+                    roiCanvas.height = img.height;
+                    roiCtx.drawImage(img, 0, 0, img.width, img.height);
 
-                    let src = cv.imread(canvas);
+                    processedRoiCanvas.width = 287; // Breite der ROIs
+                    processedRoiCanvas.height = 12 * 78; // Höhe aller 12 ROIs zusammen
+
+                    let src = cv.imread(roiCanvas);
                     let gray = new cv.Mat();
                     let blurred = new cv.Mat();
 
@@ -33,9 +39,9 @@
                     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
 
                     // 2️⃣ Weichzeichnen (Gaussian Blur)
-                    cv.GaussianBlur(gray, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+                    cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
 
-                    // 3️⃣ ROI für Spielernamen extrahieren (x, y, Breite, Höhe)
+                    // 3️⃣ ROI für Spielernamen extrahieren
                     let startX = 1013, width = 287;
                     let startY = 72, rowHeight = 78;
                     let numPlayers = 12;
@@ -49,16 +55,23 @@
 
                         let roi = blurred.roi(new cv.Rect(startX, y1, width, rowHeight));
 
-                        // In Canvas speichern für OCR
-                        let roiCanvas = document.createElement("canvas");
-                        roiCanvas.width = width;
-                        roiCanvas.height = rowHeight;
-                        let roiCtx = roiCanvas.getContext("2d");
-                        cv.imshow(roiCanvas, roi);
+                        // Zeichne ROI-Rahmen auf Originalbild (rot)
+                        roiCtx.strokeStyle = "red";
+                        roiCtx.lineWidth = 2;
+                        roiCtx.strokeRect(startX, y1, width, rowHeight);
 
-                        // 4️⃣ Texterkennung mit Tesseract.js
+                        // In separaten Canvas speichern (Graustufen + Blur)
+                        processedRoiCtx.drawImage(roiCanvas, startX, y1, width, rowHeight, 0, i * rowHeight, width, rowHeight);
+
+                        // OCR auf bearbeitetem ROI ausführen
+                        let roiCanvasTemp = document.createElement("canvas");
+                        roiCanvasTemp.width = width;
+                        roiCanvasTemp.height = rowHeight;
+                        let roiCtxTemp = roiCanvasTemp.getContext("2d");
+                        cv.imshow(roiCanvasTemp, roi);
+
                         Tesseract.recognize(
-                            roiCanvas.toDataURL(),
+                            roiCanvasTemp.toDataURL(),
                             'eng',
                             { logger: m => console.log(m) }
                         ).then(({ data: { text } }) => {
@@ -78,13 +91,18 @@
                                 let li = document.createElement("li");
                                 li.textContent = `${cleanName} → ${points} Punkte`;
                                 playerList.appendChild(li);
+
+                                // Name auf Originalbild zeichnen
+                                roiCtx.fillStyle = "yellow";
+                                roiCtx.font = "20px Arial";
+                                roiCtx.fillText(cleanName, startX + 5, y1 + rowHeight - 10);
                             }
                         });
 
                         roi.delete();
                     }
 
-                    // Team-Ergebnisse ausgeben
+                    // Team-Ergebnisse nach kurzer Verzögerung anzeigen
                     setTimeout(() => {
                         for (let team in teamScores) {
                             let li = document.createElement("li");
