@@ -109,7 +109,7 @@ function performOCR() {
                             li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
                             teamScoresList.appendChild(li);
                         }
-                    }, 3000);
+                    }, 30);
 
                     src.delete();
                     gray.delete();
