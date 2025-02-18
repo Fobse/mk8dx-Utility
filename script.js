@@ -1,5 +1,21 @@
-        function performOCR() {
-                setTimeout(3000)
+        function onOpenCvReady() {
+    console.log("OpenCV.js ist geladen und bereit!");
+    performOCR(); // OCR erst starten, wenn OpenCV bereit ist
+}
+
+function checkOpenCV() {
+    if (cv && cv.imread) {
+        onOpenCvReady();
+    } else {
+        console.log("Warte auf OpenCV...");
+        setTimeout(checkOpenCV, 100); // Alle 100ms prüfen, ob OpenCV bereit ist
+    }
+}
+
+// Warte, bis OpenCV fertig geladen ist
+checkOpenCV();
+
+function performOCR() {
             let fileInput = document.getElementById("imageInput");
             let playerList = document.getElementById("playerList");
             let teamScoresList = document.getElementById("teamScores");
