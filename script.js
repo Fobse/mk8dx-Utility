@@ -1,4 +1,5 @@
         function performOCR() {
+                setTimeout(3000)
             let fileInput = document.getElementById("imageInput");
             let playerList = document.getElementById("playerList");
             let teamScoresList = document.getElementById("teamScores");
