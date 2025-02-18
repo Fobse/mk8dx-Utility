@@ -1,4 +1,4 @@
-function performOCR() {
+        function performOCR() {
             let fileInput = document.getElementById("imageInput");
             let playerList = document.getElementById("playerList");
             let teamScoresList = document.getElementById("teamScores");
@@ -109,7 +109,7 @@ function performOCR() {
                             li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
                             teamScoresList.appendChild(li);
                         }
-                    }, 30);
+                    }, 3000);
 
                     src.delete();
                     gray.delete();
@@ -118,7 +118,4 @@ function performOCR() {
             };
 
             reader.readAsDataURL(file);
-}
-</script>
-</body>
-</html>
+        }
