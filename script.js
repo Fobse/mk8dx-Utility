@@ -32,7 +32,7 @@ function performOCR() {
             processedRoiCanvas.height = 12 * 78; // Höhe aller 12 ROIs zusammen
 
             let src = cv.imread(roiCanvas);
-            let resized = resizeImage(src, 1200);  // Bild auf 1200px Breite verkleinern
+            let resized = resizeCanvas(src, 1200);  // Bild auf 1200px Breite verkleinern
             let gray = new cv.Mat();
             let blurred = new cv.Mat();
 
