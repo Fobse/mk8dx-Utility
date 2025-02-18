@@ -62,15 +62,21 @@ function performOCR() {
                 let y1 = startY + i * rowHeight;
                 let y2 = y1 + rowHeight;
 
-                let roi = blurred.roi(new cv.Rect(startX, y1, width, rowHeight));
+                // Ensure the ROI is within the image bounds
+                if (y2 > blurred.rows) {
+                    y2 = blurred.rows;
+                }
+
+                let roiRect = new cv.Rect(startX, y1, width, y2 - y1);
+                let roi = blurred.roi(roiRect);
 
                 // Zeichne ROI-Rahmen auf Originalbild (rot)
                 roiCtx.strokeStyle = "red";
                 roiCtx.lineWidth = 2;
-                roiCtx.strokeRect(startX, y1, width, rowHeight);
+                roiCtx.strokeRect(startX, y1, width, y2 - y1);
 
                 // In separaten Canvas speichern (Graustufen + Blur)
-                processedRoiCtx.drawImage(roiCanvas, startX, y1, width, rowHeight, 0, i * rowHeight, width, rowHeight);
+                processedRoiCtx.drawImage(roiCanvas, startX, y1, width, y2 - y1, 0, i * rowHeight, width, rowHeight);
 
                 // OCR auf bearbeitetem ROI ausführen
                 let roiCanvasTemp = document.createElement("canvas");
