@@ -36,8 +36,8 @@ function performOCR() {
             roiCanvas.height = img.height;
             roiCtx.drawImage(img, 0, 0, img.width, img.height);
 
-            processedRoiCanvas.width = 287; // Breite der ROIs
-            processedRoiCanvas.height = 12 * 78; // Höhe aller 12 ROIs zusammen
+            processedRoiCanvas.width = 179; // Breite der ROIs
+            processedRoiCanvas.height = 12 * 49; // Höhe aller 12 ROIs zusammen
 
             let src = cv.imread(roiCanvas);
             let resized = resizeImage(src, 1200);  // Bild auf 1200px Breite verkleinern
@@ -45,14 +45,14 @@ function performOCR() {
             let blurred = new cv.Mat();
 
             // 1️⃣ Graustufen-Umwandlung
-            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+            cv.cvtColor(resized, gray, cv.COLOR_RGBA2GRAY, 0);
 
             // 2️⃣ Weichzeichnen (Gaussian Blur)
-            cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+            cv.GaussianBlur(gray, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
 
             // 3️⃣ ROI für Spielernamen extrahieren
-            let startX = 1013, width = 287;
-            let startY = 72, rowHeight = 78;
+            let startX = 633, width = 179;
+            let startY = 45, rowHeight = 49;
             let numPlayers = 12;
 
             let placementPoints = [15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
