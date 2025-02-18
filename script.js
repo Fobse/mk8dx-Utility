@@ -1,3 +1,11 @@
+function resizeImage(src, maxWidth) {
+    let dst = new cv.Mat();
+    let scale = maxWidth / src.cols;
+    let newSize = new cv.Size(src.cols * scale, src.rows * scale);
+    cv.resize(src, dst, newSize, 0, 0, cv.INTER_AREA);
+    return dst;
+}
+
 function performOCR() {
     let fileInput = document.getElementById("imageInput");
     let playerList = document.getElementById("playerList");
@@ -32,7 +40,7 @@ function performOCR() {
             processedRoiCanvas.height = 12 * 78; // Höhe aller 12 ROIs zusammen
 
             let src = cv.imread(roiCanvas);
-            let resized = cv.resize(src, 1200);  // Bild auf 1200px Breite verkleinern
+            let resized = resizeImage(src, 1200);  // Bild auf 1200px Breite verkleinern
             let gray = new cv.Mat();
             let blurred = new cv.Mat();
 
@@ -73,7 +81,7 @@ function performOCR() {
 
                 Tesseract.recognize(
                     roiCanvasTemp.toDataURL(),
-                    'eng', { tessedit_pageseg_mode: 6 },
+                    'eng',
                     { logger: m => console.log(m) }
                 ).then(({ data: { text } }) => {
                     let cleanName = text.trim();
