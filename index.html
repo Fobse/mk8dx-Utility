@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OCR Scoreboard</title>
 </head>
-    
-    <!-- OpenCV.js & Tesseract.js -->
-        <script src="https://cdn.jsdelivr.net/npm/tesseract.js"></script>
-        <script async src="https://docs.opencv.org/master/opencv.js"></script>
-      
 <body>
     <h2>Bild hochladen</h2>
     <input type="file" id="imageInput" accept="image/*">
@@ -27,6 +22,10 @@
     <h3>Verarbeitete ROIs (Graustufen + Blur)</h3>
     <canvas id="processedRoiCanvas"></canvas>
 
-      <script src="sript.js"></script>
-   </body>
+    <!-- OpenCV.js & Tesseract.js -->
+    <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js"></script>
+
+   
+</body>
 </html>
