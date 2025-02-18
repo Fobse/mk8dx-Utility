@@ -119,5 +119,6 @@ function performOCR() {
 
             reader.readAsDataURL(file);
 }
+</script>
 </body>
 </html>
