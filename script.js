@@ -1,4 +1,4 @@
-        function onOpenCvReady() {
+function onOpenCvReady() {
     console.log("OpenCV.js ist geladen und bereit!");
     performOCR(); // OCR erst starten, wenn OpenCV bereit ist
 }
