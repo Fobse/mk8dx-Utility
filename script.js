@@ -45,7 +45,7 @@ function performOCR() {
             let blurred = new cv.Mat();
 
             // 1️⃣ Graustufen-Umwandlung
-            cv.cvtColor(resized, gray, cv.COLOR_RGBA2GRAY, 0);
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
 
             // 2️⃣ Weichzeichnen (Gaussian Blur)
             cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
