@@ -1,3 +1,12 @@
+    // Funktion Umbennen und definieren
+function resizeImage(src, maxWidth) {
+    let dst = new cv.Mat();
+    let scale = maxWidth / src.cols;
+    let newSize = new cv.Size(src.cols * scale, src.rows * scale);
+    cv.resize(src, dst, newSize, 0, 0, cv.INTER_AREA);
+    return dst;
+}
+
 function performOCR() {
     let fileInput = document.getElementById("imageInput");
     let playerList = document.getElementById("playerList");
@@ -73,7 +82,7 @@ function performOCR() {
 
                 Tesseract.recognize(
                     roiCanvasTemp.toDataURL(),
-                    'eng',
+                    'eng', { tessedit_pageseg_mode: 6 },
                     { logger: m => console.log(m) }
                 ).then(({ data: { text } }) => {
                     let cleanName = text.trim();
