@@ -9,7 +9,8 @@
     <!-- OpenCV.js & Tesseract.js -->
     <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
-    
+         <!-- Include your Tesseract.js file here -->
+    <script src="Tesseract.js" defer></script>
 <body>
     <h2>Bild hochladen</h2>
     <input type="file" id="imageInput" accept="image/*">
@@ -27,7 +28,5 @@
     <h3>Verarbeitete ROIs (Graustufen + Blur)</h3>
     <canvas id="processedRoiCanvas"></canvas>
 
-        <!-- Include your Tesseract.js file here -->
-    <script src="Tesseract.js"></script>
-</body>
+   </body>
 </html>
