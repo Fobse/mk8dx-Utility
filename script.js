@@ -1,8 +1,7 @@
-function resizeImage(src, maxWidth) {
+function resizeImage(src, width, height) {
     let dst = new cv.Mat();
-    let scale = maxWidth / src.cols;
-    let newSize = new cv.Size(src.cols * scale, src.rows * scale);
-    cv.resize(src, dst, newSize, 0, 0, cv.INTER_AREA);
+    let dsize = new cv.Size(width, height);
+    cv.resize(src, dst, dsize, 0, 0, cv.INTER_AREA);
     return dst;
 }
 
@@ -31,16 +30,24 @@ function performOCR() {
         img.src = reader.result;
 
         img.onload = function () {
-            // Setze Canvas-Größe auf Bildgröße
-            roiCanvas.width = img.width;
-            roiCanvas.height = img.height;
-            roiCtx.drawImage(img, 0, 0, img.width, img.height);
+            // Erstelle temporäres Canvas, um Bild zu skalieren
+            let tempCanvas = document.createElement("canvas");
+            let tempCtx = tempCanvas.getContext("2d");
 
-            processedRoiCanvas.width = 179; // Breite der ROIs
-            processedRoiCanvas.height = 12 * 49; // Höhe aller 12 ROIs zusammen
+            // Setze feste Größe auf 1200x675 (16:9)
+            tempCanvas.width = 1200;
+            tempCanvas.height = 675;
+            tempCtx.drawImage(img, 0, 0, 1200, 675);
 
-            let src = cv.imread(roiCanvas);
-            let resized = resizeImage(src, 1200);  // Bild auf 1200px Breite verkleinern
+            // Lade Bild in OpenCV
+            let src = cv.imread(tempCanvas);
+            let resized = resizeImage(src, 1200, 675);  // Jetzt sicherstellen, dass es 1200x675 ist
+
+            // Zeichne skaliertes Bild auf das Haupt-Canvas
+            roiCanvas.width = 1200;
+            roiCanvas.height = 675;
+            roiCtx.drawImage(tempCanvas, 0, 0);
+
             let gray = new cv.Mat();
             let blurred = new cv.Mat();
 
@@ -50,13 +57,17 @@ function performOCR() {
             // 2️⃣ Weichzeichnen (Gaussian Blur)
             cv.GaussianBlur(gray, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
 
-            // 3️⃣ ROI für Spielernamen extrahieren
-            let startX = 633, width = 179;
+            // 3️⃣ ROI für Spielernamen extrahieren (ANPASSUNG auf 1200x675)
+            let startX = 633, width = 179;  // Werte auf skaliertes Bild angepasst
             let startY = 45, rowHeight = 49;
             let numPlayers = 12;
 
             let placementPoints = [15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
             let teamScores = {};
+
+            // **Canvas für verarbeitete ROIs setzen**
+            processedRoiCanvas.width = width;
+            processedRoiCanvas.height = numPlayers * rowHeight;
 
             for (let i = 0; i < numPlayers; i++) {
                 let y1 = startY + i * rowHeight;
@@ -120,6 +131,7 @@ function performOCR() {
                 }
             }, 3000);
 
+            // Aufräumen
             src.delete();
             resized.delete();
             gray.delete();
