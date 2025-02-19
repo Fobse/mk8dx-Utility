@@ -8,7 +8,7 @@ function resizeImage(src, maxWidth) {
 
 // Richtige Definition der CLAHE-Funktion
 function applyCLAHE(srcMat) {
-    let clahe = new cv.createCLAHE(2.0, new cv.Size(8, 8)); // Clip Limit = 2.0, Tile Grid = 8x8
+    let clahe = cv.createCLAHE(2.0, new cv.Size(8, 8)); // Clip Limit = 2.0, Tile Grid = 8x8
     let dstMat = new cv.Mat();
     cv.equalizeHist(srcMat, srcMat); // Histogrammausgleich für besseren Kontrast
     clahe.apply(srcMat, dstMat);
