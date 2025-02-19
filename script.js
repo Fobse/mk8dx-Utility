@@ -4,13 +4,15 @@ function resizeImage(src, maxWidth) {
     let newSize = new cv.Size(maxWidth, src.rows * scale);
     cv.resize(src, dst, newSize, 0, 0, cv.INTER_AREA);
     return dst;
-}
+};
+
+// Richtige Definition der CLAHE-Funktion
 function applyCLAHE(srcMat) {
     let clahe = new cv.createCLAHE(2.0, new cv.Size(8, 8)); // Clip Limit = 2.0, Tile Grid = 8x8
     let dstMat = new cv.Mat();
     clahe.apply(srcMat, dstMat);
     return dstMat;
-}
+};
 
 function performOCR() {
     let fileInput = document.getElementById("imageInput");
@@ -50,8 +52,7 @@ function performOCR() {
             let blurred = new cv.Mat();
             // let canny = new cv.Mat();
             // let inverted = new cv.Mat();
-          
-            
+
             // 1️⃣ Graustufen-Umwandlung
             cv.cvtColor(resized, gray, cv.COLOR_RGBA2GRAY, 0);
 
@@ -61,10 +62,14 @@ function performOCR() {
             // Invertieren (weiße Schrift auf schwarzem Hintergrund)
             // cv.bitwise_not(gray, inverted);
 
-            cv.applyCLAHE(gray, clahe); // CLAHE anwenden
 
-            // 2️⃣ Weichzeichnen (Gaussian Blur)
-            cv.GaussianBlur(clahe, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+            // 2️⃣ CLAHE anwenden (Tippfehler in deinem Code korrigiert)
+            let claheMat = applyCLAHE(gray);
+
+            // 3️⃣ Weichzeichnen (Gaussian Blur)
+            cv.GaussianBlur(claheMat, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+
+    
 
             // 3️⃣ ROI für Spielernamen extrahieren
             let startX = 1013 * (1200 / img.width); // Anpassen an die neue Größe
@@ -148,7 +153,7 @@ function performOCR() {
             resized.delete();
             gray.delete();
             blurred.delete();
-
+            claheMat.delete();
         };
     };
 
