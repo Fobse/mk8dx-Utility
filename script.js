@@ -50,7 +50,7 @@ function performOCR() {
             let blurred = new cv.Mat();
             // let canny = new cv.Mat();
             // let inverted = new cv.Mat();
-            let claheMat = new cv.Mat();
+          
             
             // 1️⃣ Graustufen-Umwandlung
             cv.cvtColor(resized, gray, cv.COLOR_RGBA2GRAY, 0);
@@ -61,10 +61,10 @@ function performOCR() {
             // Invertieren (weiße Schrift auf schwarzem Hintergrund)
             // cv.bitwise_not(gray, inverted);
 
-            cv.applyCLAHE(gray, claheMat); // CLAHE anwenden
+            cv.applyCLAHE(gray, clahe); // CLAHE anwenden
 
             // 2️⃣ Weichzeichnen (Gaussian Blur)
-            cv.GaussianBlur(claheMat, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+            cv.GaussianBlur(clahe, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
 
             // 3️⃣ ROI für Spielernamen extrahieren
             let startX = 1013 * (1200 / img.width); // Anpassen an die neue Größe
