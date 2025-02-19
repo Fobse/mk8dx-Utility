@@ -50,7 +50,7 @@ function performOCR() {
             let blurred = new cv.Mat();
             // let canny = new cv.Mat();
             // let inverted = new cv.Mat();
-            
+            let claheMat = new cv.Mat();
             
             // 1️⃣ Graustufen-Umwandlung
             cv.cvtColor(resized, gray, cv.COLOR_RGBA2GRAY, 0);
