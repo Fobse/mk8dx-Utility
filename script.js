@@ -10,7 +10,9 @@ function resizeImage(src, maxWidth) {
 function applyCLAHE(srcMat) {
     let clahe = new cv.createCLAHE(2.0, new cv.Size(8, 8)); // Clip Limit = 2.0, Tile Grid = 8x8
     let dstMat = new cv.Mat();
+    cv.equalizeHist(srcMat, srcMat); // Histogrammausgleich für besseren Kontrast
     clahe.apply(srcMat, dstMat);
+    clahe.delete(); // Speicher freigeben
     return dstMat;
 };
 
@@ -63,7 +65,7 @@ function performOCR() {
             // cv.bitwise_not(gray, inverted);
 
 
-            // 2️⃣ CLAHE anwenden (Tippfehler in deinem Code korrigiert)
+            // 2️⃣ CLAHE anwenden 
             let claheMat = applyCLAHE(gray);
 
             // 3️⃣ Weichzeichnen (Gaussian Blur)
