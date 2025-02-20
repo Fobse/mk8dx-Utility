@@ -134,7 +134,7 @@ function performOCR() {
                     li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
                     teamScoresList.appendChild(li);
                 }
-            }, 1000);
+            }, 8000);
 
             // Speicher freigeben
             src.delete();
