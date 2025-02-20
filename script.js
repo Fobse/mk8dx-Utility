@@ -23,25 +23,35 @@ function analyzeTeams(players) {
     let teamCounts = {};
     let unassignedPlayers = [];
 
+    console.log("🔍 ANALYZE TEAMS - Eingelesene Spieler:", players);
+
     for (let player of players) {
         let tag = player.teamTag;
+        console.log(`📌 Spieler: ${player.name}, Erkannter Team-Tag: "${tag}"`);
 
         if (tag && Object.keys(teamCounts).includes(tag)) {
-            // Falls Team bereits existiert, Spieler zu Team hinzufügen
             teamCounts[tag]++;
+            console.log(`✅ Spieler ${player.name} zum Team ${tag} hinzugefügt.`);
         } else if (tag) {
-            // Falls ein neuer, aber falscher Team-Tag erkannt wurde, Spieler als unassigned speichern
             unassignedPlayers.push(player);
+            console.warn(`⚠ Spieler ${player.name} hat einen unbekannten Tag ("${tag}") und wurde als unassigned gespeichert.`);
         } else {
-            // Falls der Spieler GAR KEINEN Tag hat, ebenfalls unassigned
             unassignedPlayers.push(player);
+            console.warn(`⚠ Spieler ${player.name} hat GAR KEINEN Tag und wurde als unassigned gespeichert.`);
         }
     }
+
+    console.log("📌 Endgültige Team-Verteilung:", teamCounts);
+    console.log("📌 Unassigned Spieler:", unassignedPlayers);
 
     return { teamCounts, unassignedPlayers };
 }
 
 function assignUnassignedPlayers(unassignedPlayers, teamCounts, teamSize) {
+    console.log("🔄 ZUWEISUNG DER UNASSIGNED SPIELER startet...");
+    console.log("📌 Aktuelle Teams vor der Zuweisung:", teamCounts);
+    console.log("📌 Unassigned Spieler vor der Zuweisung:", unassignedPlayers);
+
     for (let player of unassignedPlayers) {
         let bestMatch = Object.entries(teamCounts).find(([team, count]) => count < teamSize);
 
@@ -49,10 +59,14 @@ function assignUnassignedPlayers(unassignedPlayers, teamCounts, teamSize) {
             let teamTag = bestMatch[0];
             player.teamTag = teamTag;
             teamCounts[teamTag]++;
+
+            console.log(`✅ Spieler ${player.name} wurde zu Team ${teamTag} hinzugefügt.`);
         } else {
-            console.warn("Konnte Spieler nicht zuweisen:", player.name);
+            console.warn(`🚨 Konnte Spieler ${player.name} KEINEM Team zuweisen!`);
         }
     }
+
+    console.log("📌 Finale Team-Verteilung nach der Zuweisung:", teamCounts);
 }
 
 function performOCR() {
