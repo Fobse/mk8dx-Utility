@@ -67,6 +67,8 @@ async function performOCR() {
         return;
     }
 
+    console.log("🚀 OCR-Analyse gestartet...");
+
     let file = fileInput.files[0];
     let reader = new FileReader();
 
@@ -104,6 +106,8 @@ async function performOCR() {
             processedRoiCanvas.width = width;
             processedRoiCanvas.height = numPlayers * rowHeight;
 
+            console.log("🔎 Team-Tags gespeichert:", teamTags);
+
             // 📌 OCR-Erkennung als Promises speichern
             let ocrPromises = [];
 
@@ -139,6 +143,8 @@ async function performOCR() {
                         let teamIndex = Math.floor(i / selectedTeamSize);
                         let teamTag = teamTags[teamIndex];
 
+                        console.log(`🎯 Spieler erkannt: ${cleanName} → ${points} Punkte → Team: ${teamTag}`);
+
                         players.push({ name: cleanName, teamTag, points });
 
                         // Spieler in HTML-Liste anzeigen
@@ -150,6 +156,8 @@ async function performOCR() {
                         resizedCtx.fillStyle = "yellow";
                         resizedCtx.font = "20px Arial";
                         resizedCtx.fillText(cleanName, startX + 5, y1 + rowHeight - 10);
+                    } else {
+                        console.warn(`⚠️ Spieler an Position ${i + 1} wurde nicht erkannt!`);
                     }
                 });
 
@@ -169,8 +177,9 @@ async function performOCR() {
                 teamScores[player.teamTag] += player.points;
             }
 
-            // 📌 Ergebnisse anzeigen
             console.log("🏆 Finale Team-Ergebnisse:", teamScores);
+
+            // 📌 Ergebnisse in HTML ausgeben
             for (let team in teamScores) {
                 let li = document.createElement("li");
                 li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
