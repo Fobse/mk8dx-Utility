@@ -8,6 +8,16 @@
 <body>
     <script src="script.js"></script>
 
+    <div id="teamSetup">
+        <h3>Wähle die Teamgröße:</h3>
+        <button onclick="setTeamSize(2)">2er Teams</button>
+        <button onclick="setTeamSize(3)">3er Teams</button>
+        <button onclick="setTeamSize(4)">4er Teams</button>
+    
+        <div id="teamTagInputs" style="margin-top: 20px;"></div>
+        <button onclick="applyTeamTags()">Team-Tags übernehmen</button>
+    </div>
+    
     <h2>Bild hochladen</h2>
     <input type="file" id="imageInput" accept="image/*">
     <button onclick="performOCR()">OCR starten</button>
