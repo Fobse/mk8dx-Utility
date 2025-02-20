@@ -25,9 +25,15 @@ function analyzeTeams(players) {
 
     for (let player of players) {
         let tag = player.teamTag;
-        if (tag) {
-            teamCounts[tag] = (teamCounts[tag] || 0) + 1;
+
+        if (tag && Object.keys(teamCounts).includes(tag)) {
+            // Falls Team bereits existiert, Spieler zu Team hinzufügen
+            teamCounts[tag]++;
+        } else if (tag) {
+            // Falls ein neuer, aber falscher Team-Tag erkannt wurde, Spieler als unassigned speichern
+            unassignedPlayers.push(player);
         } else {
+            // Falls der Spieler GAR KEINEN Tag hat, ebenfalls unassigned
             unassignedPlayers.push(player);
         }
     }
@@ -35,14 +41,16 @@ function analyzeTeams(players) {
     return { teamCounts, unassignedPlayers };
 }
 
-function assignUnassignedPlayers(players, teamCounts, teamSize) {
-    for (let player of players) {
-        let missingTeam = Object.entries(teamCounts).find(([team, count]) => count < teamSize);
-        
-        if (missingTeam) {
-            let teamTag = missingTeam[0];
+function assignUnassignedPlayers(unassignedPlayers, teamCounts, teamSize) {
+    for (let player of unassignedPlayers) {
+        let bestMatch = Object.entries(teamCounts).find(([team, count]) => count < teamSize);
+
+        if (bestMatch) {
+            let teamTag = bestMatch[0];
             player.teamTag = teamTag;
             teamCounts[teamTag]++;
+        } else {
+            console.warn("Konnte Spieler nicht zuweisen:", player.name);
         }
     }
 }
