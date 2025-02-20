@@ -6,61 +6,69 @@ function resizeImage(src, maxWidth) {
     return dst;
 }
 
-// 🏆 NEU: Team-Logik-Funktionen direkt darunter einfügen
 function detectTeamSize(players) {
-    let playerCount = players.length;
+    let tagCounts = {};
+
+    // Zähle, wie oft jeder Tag vorkommt
+    for (let player of players) {
+        let tag = player.teamTag;
+        if (tag) {
+            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        }
+    }
+
+    console.log("📊 Erkannte Team-Tags:", tagCounts);
+
+    // Finde die häufigste Teamgröße
+    let maxCount = Math.max(...Object.values(tagCounts));
     let possibleSizes = [2, 3, 4];
 
     for (let size of possibleSizes) {
-        if (playerCount % size === 0) {
+        if (maxCount % size === 0 || maxCount >= size) {
+            console.log(`✅ Erkannte Teamgröße: ${size}`);
             return size;
         }
     }
-    return null; // Fehler: Keine gültige Teamgröße gefunden
+
+    console.warn("⚠ Keine sinnvolle Teamgröße gefunden!");
+    return null;
 }
+
 
 function analyzeTeams(players) {
     let teamCounts = {};
     let unassignedPlayers = [];
 
-    console.log("🔍 ANALYZE TEAMS - Eingelesene Spieler:", players);
+    console.log("🔍 ANALYZE TEAMS - Alle Spieler vor der Teamzuordnung:", players);
 
+    // Zähle Team-Tags
     for (let player of players) {
         let tag = player.teamTag;
-        console.log(`📌 Spieler: ${player.name}, Erkannter Team-Tag: "${tag}"`);
-
-        if (tag && Object.keys(teamCounts).includes(tag)) {
-            teamCounts[tag]++;
-            console.log(`✅ Spieler ${player.name} zum Team ${tag} hinzugefügt.`);
-        } else if (tag) {
-            unassignedPlayers.push(player);
-            console.warn(`⚠ Spieler ${player.name} hat einen unbekannten Tag ("${tag}") und wurde als unassigned gespeichert.`);
+        if (tag) {
+            teamCounts[tag] = (teamCounts[tag] || 0) + 1;
         } else {
             unassignedPlayers.push(player);
-            console.warn(`⚠ Spieler ${player.name} hat GAR KEINEN Tag und wurde als unassigned gespeichert.`);
         }
     }
 
-    console.log("📌 Endgültige Team-Verteilung:", teamCounts);
-    console.log("📌 Unassigned Spieler:", unassignedPlayers);
+    console.log("📊 Team-Verteilung vor der Korrektur:", teamCounts);
+    console.log("🟡 Unassigned Spieler:", unassignedPlayers);
 
     return { teamCounts, unassignedPlayers };
 }
 
-function assignUnassignedPlayers(unassignedPlayers, teamCounts, teamSize) {
-    console.log("🔄 ZUWEISUNG DER UNASSIGNED SPIELER startet...");
-    console.log("📌 Aktuelle Teams vor der Zuweisung:", teamCounts);
-    console.log("📌 Unassigned Spieler vor der Zuweisung:", unassignedPlayers);
+function assignUnassignedPlayers(players, teamCounts, teamSize) {
+    console.log("🔄 STARTE ZUWEISUNG DER UNASSIGNED SPIELER...");
 
-    for (let player of unassignedPlayers) {
-        let bestMatch = Object.entries(teamCounts).find(([team, count]) => count < teamSize);
-
-        if (bestMatch) {
-            let teamTag = bestMatch[0];
+    for (let player of players) {
+        // Finde das Team mit den wenigsten Spielern
+        let missingTeam = Object.entries(teamCounts).find(([team, count]) => count < teamSize);
+        
+        if (missingTeam) {
+            let teamTag = missingTeam[0];
             player.teamTag = teamTag;
             teamCounts[teamTag]++;
-
-            console.log(`✅ Spieler ${player.name} wurde zu Team ${teamTag} hinzugefügt.`);
+            console.log(`✅ Spieler ${player.name} wurde zu Team ${teamTag} zugewiesen.`);
         } else {
             console.warn(`🚨 Konnte Spieler ${player.name} KEINEM Team zuweisen!`);
         }
@@ -170,30 +178,26 @@ function performOCR() {
 
             await Promise.all(ocrPromises); // 🏆 OCR wartet auf alle Spieler
 
-            let teamSize = detectTeamSize(players);
-            if (!teamSize) {
-                alert("Fehler: Ungültige Spieleranzahl!");
-                return;
-            }
+          console.log("🚀 Starte Team-Logik...");
 
-            let { teamCounts, unassignedPlayers } = analyzeTeams(players);
-            assignUnassignedPlayers(unassignedPlayers, teamCounts, teamSize);
+    let teamSize = detectTeamSize(players);
+    if (!teamSize) {
+        alert("Fehler: Ungültige Spieleranzahl!");
+        return;
+    }
 
-            let teamScores = {};
-            for (let player of players) {
-                if (!teamScores[player.teamTag]) {
-                    teamScores[player.teamTag] = 0;
-                }
-                teamScores[player.teamTag] += player.points;
-            }
+    let { teamCounts, unassignedPlayers } = analyzeTeams(players);
+    assignUnassignedPlayers(unassignedPlayers, teamCounts, teamSize);
 
-            for (let team in teamScores) {
-                let li = document.createElement("li");
-                li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
-                teamScoresList.appendChild(li);
-            }
+    for (let team in teamCounts) {
+        let li = document.createElement("li");
+        li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
+        teamScoresList.appendChild(li);
+    }
 
-            console.log("Finale Teams:", teamCounts);
+    console.log("🎯 Finale Teams:", teamCounts);
+
+
 
             src.delete();
             resized.delete();
