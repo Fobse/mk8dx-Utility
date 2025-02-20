@@ -50,7 +50,7 @@ function applyTeamTags() {
 }
 
 
-function performOCR() {
+async function performOCR() {
     let fileInput = document.getElementById("imageInput");
     let playerList = document.getElementById("playerList");
     let teamScoresList = document.getElementById("teamScores");
@@ -88,7 +88,7 @@ function performOCR() {
             let morph = new cv.Mat();
 
             cv.cvtColor(resized, gray, cv.COLOR_RGBA2GRAY, 0);
-            cv.threshold(gray, thresh, 165, 255, cv.THRESH_BINARY);
+            cv.threshold(gray, thresh, 175, 255, cv.THRESH_BINARY);
             cv.morphologyEx(thresh, morph, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 1)));
             cv.GaussianBlur(morph, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
 
@@ -104,6 +104,8 @@ function performOCR() {
             processedRoiCanvas.width = width;
             processedRoiCanvas.height = numPlayers * rowHeight;
 
+            // 📌 Warte auf alle OCR-Erkennungen mit Promise.all()
+            let ocrPromises = [];
 
             for (let i = 0; i < numPlayers; i++) {
                 let y1 = startY + i * rowHeight;
@@ -120,7 +122,7 @@ function performOCR() {
                 cv.imshow(roiCanvasTemp, roi);
                 processedRoiCtx.drawImage(roiCanvasTemp, 0, i * rowHeight, width, rowHeight);
 
-                Tesseract.recognize(
+                let ocrPromise = Tesseract.recognize(
                     roiCanvasTemp.toDataURL(),
                     'eng',
                     {
@@ -128,7 +130,7 @@ function performOCR() {
                         tessedit_pageseg_mode: 'PSM_SINGLE_LINE',
                         tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
                     }
-                        ).then(({ data: { text } }) => {
+                ).then(({ data: { text } }) => {
                     let cleanName = text.trim();
                     if (cleanName) {
                         let points = placementPoints[i];
@@ -137,28 +139,26 @@ function performOCR() {
                         let teamIndex = Math.floor(i / selectedTeamSize);
                         let teamTag = teamTags[teamIndex];
                 
-                        if (!teamScores[teamTag]) {
-                            teamScores[teamTag] = 0;
-                        }
-                        teamScores[teamTag] += points;
-                
-                        players.push({ name: cleanName, teamTag });
-                
+                        players.push({ name: cleanName, teamTag, points });
+
                         // Spieler in HTML-Liste anzeigen
                         let li = document.createElement("li");
                         li.textContent = `${cleanName} → ${points} Punkte`;
                         playerList.appendChild(li);
-                
+
                         // Name auf resizedCanvas zeichnen
                         resizedCtx.fillStyle = "yellow";
                         resizedCtx.font = "20px Arial";
                         resizedCtx.fillText(cleanName, startX + 5, y1 + rowHeight - 10);
                     }
                 });
-                
+
+                ocrPromises.push(ocrPromise);
                 roi.delete();
             }
 
+            // 📌 Warte auf ALLE OCR-Ergebnisse
+            await Promise.all(ocrPromises);
 
             // 🏆 Team-Punkte berechnen
             let teamScores = {};
@@ -169,14 +169,15 @@ function performOCR() {
                 teamScores[player.teamTag] += player.points;
             }
 
+            // 📌 Ergebnisse anzeigen
+            console.log("🏆 Finale Team-Ergebnisse:", teamScores);
             for (let team in teamScores) {
                 let li = document.createElement("li");
                 li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
                 teamScoresList.appendChild(li);
             }
 
-            console.log("Finale Teams:", teamCounts);
-
+            // Speicher freigeben
             src.delete();
             resized.delete();
             gray.delete();
