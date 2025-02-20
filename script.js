@@ -4,17 +4,7 @@ function resizeImage(src, maxWidth) {
     let newSize = new cv.Size(maxWidth, src.rows * scale);
     cv.resize(src, dst, newSize, 0, 0, cv.INTER_AREA);
     return dst;
-};
-
-// Richtige Definition der CLAHE-Funktion
-function applyCLAHE(srcMat) {
-    let clahe = cv.createCLAHE(2.0, new cv.Size(8, 8)); // Clip Limit = 2.0, Tile Grid = 8x8
-    let dstMat = new cv.Mat();
-    cv.equalizeHist(srcMat, srcMat); // Histogrammausgleich für besseren Kontrast
-    clahe.apply(srcMat, dstMat);
-    clahe.delete(); // Speicher freigeben
-    return dstMat;
-};
+}
 
 function performOCR() {
     let fileInput = document.getElementById("imageInput");
@@ -54,24 +44,31 @@ function performOCR() {
             let blurred = new cv.Mat();
             // let canny = new cv.Mat();
             // let inverted = new cv.Mat();
+            // let hist = new cv.Mat();
+            let thresh = new cv.Mat();
+            let morph = new cv.Mat();
+
 
             // 1️⃣ Graustufen-Umwandlung
             cv.cvtColor(resized, gray, cv.COLOR_RGBA2GRAY, 0);
 
             // Kanten mit Canny-Algorithmus erkennen
             // cv.Canny(gray, canny, 60, 260)
+        
+            // Schwellenwert für binäres Bild
+            cv.threshold(gray, thresh, 170, 255, cv.THRESH_BINARY);
+
+            // Text verbessern
+            cv.morphologyEx(thresh, morph, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(2, 2)));
 
             // Invertieren (weiße Schrift auf schwarzem Hintergrund)
             // cv.bitwise_not(gray, inverted);
-
-
-            // 2️⃣ CLAHE anwenden 
-            let claheMat = applyCLAHE(gray);
+            
+            // 2️⃣ Kontrastanpassung 
+            // cv.equalizeHist(gray, hist);
 
             // 3️⃣ Weichzeichnen (Gaussian Blur)
-            cv.GaussianBlur(claheMat, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
-
-    
+            cv.GaussianBlur(morph, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
 
             // 3️⃣ ROI für Spielernamen extrahieren
             let startX = 1013 * (1200 / img.width); // Anpassen an die neue Größe
@@ -105,14 +102,17 @@ function performOCR() {
 
                 processedRoiCtx.drawImage(roiCanvasTemp, 0, i * rowHeight, width, rowHeight);
 
+            
+
                 // OCR auf der verarbeiteten ROI ausführen
+                Tesseract.setParameters({
+                    tessedit_pageseg_mode: "6",
+                    tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+                });
                 Tesseract.recognize(
                     roiCanvasTemp.toDataURL(),
-                    'eng', 
-                    { logger: m => console.log(m),
-                        tessedit_pageseg_mode: "6", // PSM-Modus setzen (6 = Assumed single uniform block of text)
-                        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-                    }
+                        lang='eng', 
+                    { logger: m => console.log(m)}
                 ).then(({ data: { text } }) => {
                     let cleanName = text.trim();
                     if (cleanName) {
@@ -155,7 +155,8 @@ function performOCR() {
             resized.delete();
             gray.delete();
             blurred.delete();
-            claheMat.delete();
+            thresh.delete();
+            morph.delete();
         };
     };
 
