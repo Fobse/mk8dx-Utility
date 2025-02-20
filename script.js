@@ -105,14 +105,13 @@ function performOCR() {
             
 
                 // OCR auf der verarbeiteten ROI ausführen
-                Tesseract.setParameters({
-                    tessedit_pageseg_mode: "6",
-                    tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-                });
-                Tesseract.recognize(
+                    Tesseract.recognize(
                     roiCanvasTemp.toDataURL(),
                         lang='eng', 
-                    { logger: m => console.log(m)}
+                    { logger: m => console.log(m),
+                        tessedit_pageseg_mode: 'PSM_SINGLE_LINE',
+                        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+                    }
                 ).then(({ data: { text } }) => {
                     let cleanName = text.trim();
                     if (cleanName) {
