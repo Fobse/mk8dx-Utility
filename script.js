@@ -104,7 +104,7 @@ async function performOCR() {
             processedRoiCanvas.width = width;
             processedRoiCanvas.height = numPlayers * rowHeight;
 
-            // 📌 Warte auf alle OCR-Erkennungen mit Promise.all()
+            // 📌 OCR-Erkennung als Promises speichern
             let ocrPromises = [];
 
             for (let i = 0; i < numPlayers; i++) {
@@ -135,15 +135,15 @@ async function performOCR() {
                     if (cleanName) {
                         let points = placementPoints[i];
                 
-                        // 🏆 Neuer Team-Tag: Nimm den manuell gesetzten Wert
+                        // 🏆 Richtiges Team anhand der eingegebenen Tags bestimmen
                         let teamIndex = Math.floor(i / selectedTeamSize);
                         let teamTag = teamTags[teamIndex];
-                
+
                         players.push({ name: cleanName, teamTag, points });
 
                         // Spieler in HTML-Liste anzeigen
                         let li = document.createElement("li");
-                        li.textContent = `${cleanName} → ${points} Punkte`;
+                        li.textContent = `${cleanName} → ${points} Punkte (${teamTag})`;
                         playerList.appendChild(li);
 
                         // Name auf resizedCanvas zeichnen
@@ -160,7 +160,7 @@ async function performOCR() {
             // 📌 Warte auf ALLE OCR-Ergebnisse
             await Promise.all(ocrPromises);
 
-            // 🏆 Team-Punkte berechnen
+            // 🏆 Team-Punkte berechnen (Richtige Zuordnung!)
             let teamScores = {};
             for (let player of players) {
                 if (!teamScores[player.teamTag]) {
