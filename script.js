@@ -42,9 +42,6 @@ function performOCR() {
 
             let gray = new cv.Mat();
             let blurred = new cv.Mat();
-            // let canny = new cv.Mat();
-            // let inverted = new cv.Mat();
-            // let hist = new cv.Mat();
             let thresh = new cv.Mat();
             let morph = new cv.Mat();
 
@@ -52,20 +49,11 @@ function performOCR() {
             // 1️⃣ Graustufen-Umwandlung
             cv.cvtColor(resized, gray, cv.COLOR_RGBA2GRAY, 0);
 
-            // Kanten mit Canny-Algorithmus erkennen
-            // cv.Canny(gray, canny, 60, 260)
-        
             // Schwellenwert für binäres Bild
             cv.threshold(gray, thresh, 165, 255, cv.THRESH_BINARY);
 
             // Text verbessern
             cv.morphologyEx(thresh, morph, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 1, (1))));
-
-            // Invertieren (weiße Schrift auf schwarzem Hintergrund)
-            // cv.bitwise_not(gray, inverted);
-            
-            // 2️⃣ Kontrastanpassung 
-            // cv.equalizeHist(gray, hist);
 
             // 3️⃣ Weichzeichnen (Gaussian Blur)
             cv.GaussianBlur(morph, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
@@ -101,7 +89,6 @@ function performOCR() {
                 cv.imshow(roiCanvasTemp, roi);
 
                 processedRoiCtx.drawImage(roiCanvasTemp, 0, i * rowHeight, width, rowHeight);
-
             
 
                 // OCR auf der verarbeiteten ROI ausführen
@@ -147,7 +134,7 @@ function performOCR() {
                     li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
                     teamScoresList.appendChild(li);
                 }
-            }, 3000);
+            }, 1000);
 
             // Speicher freigeben
             src.delete();
