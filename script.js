@@ -5,77 +5,50 @@ function resizeImage(src, maxWidth) {
     cv.resize(src, dst, newSize, 0, 0, cv.INTER_AREA);
     return dst;
 }
+let selectedTeamSize = null;
+let teamTags = {}; // Speichert die Team-Tags
 
-function detectTeamSize(players) {
-    let tagCounts = {};
+// 🏆 1️⃣ Teamgröße setzen & Eingabefelder generieren
+function setTeamSize(size) {
+    selectedTeamSize = size;
+    let inputContainer = document.getElementById("teamTagInputs");
+    inputContainer.innerHTML = ""; // Vorherige Eingaben löschen
 
-    // Zähle, wie oft jeder Tag vorkommt
-    for (let player of players) {
-        let tag = player.teamTag;
+    for (let i = 0; i < 12 / size; i++) {
+        let input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = `Team ${i + 1} Tag`;
+        input.id = `teamTag_${i}`;
+        inputContainer.appendChild(input);
+    }
+    
+    console.log(`✅ Teamgröße ${size} ausgewählt!`);
+}
+
+// 🏆 2️⃣ Team-Tags aus Eingaben speichern
+function applyTeamTags() {
+    if (!selectedTeamSize) {
+        alert("Bitte erst eine Teamgröße wählen!");
+        return;
+    }
+
+    teamTags = {};
+    let numTeams = 12 / selectedTeamSize;
+
+    for (let i = 0; i < numTeams; i++) {
+        let tag = document.getElementById(`teamTag_${i}`).value.trim();
         if (tag) {
-            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-        }
-    }
-
-    console.log("📊 Erkannte Team-Tags:", tagCounts);
-
-    // Finde die häufigste Teamgröße
-    let maxCount = Math.max(...Object.values(tagCounts));
-    let possibleSizes = [2, 3, 4];
-
-    for (let size of possibleSizes) {
-        if (maxCount % size === 0 || maxCount >= size) {
-            console.log(`✅ Erkannte Teamgröße: ${size}`);
-            return size;
-        }
-    }
-
-    console.warn("⚠ Keine sinnvolle Teamgröße gefunden!");
-    return null;
-}
-
-
-function analyzeTeams(players) {
-    let teamCounts = {};
-    let unassignedPlayers = [];
-
-    console.log("🔍 ANALYZE TEAMS - Alle Spieler vor der Teamzuordnung:", players);
-
-    // Zähle Team-Tags
-    for (let player of players) {
-        let tag = player.teamTag;
-        if (tag) {
-            teamCounts[tag] = (teamCounts[tag] || 0) + 1;
+            teamTags[i] = tag;
         } else {
-            unassignedPlayers.push(player);
+            alert("Bitte alle Team-Tags ausfüllen!");
+            return;
         }
     }
 
-    console.log("📊 Team-Verteilung vor der Korrektur:", teamCounts);
-    console.log("🟡 Unassigned Spieler:", unassignedPlayers);
-
-    return { teamCounts, unassignedPlayers };
+    console.log("📌 Gespeicherte Team-Tags:", teamTags);
+    alert("Team-Tags wurden übernommen!");
 }
 
-function assignUnassignedPlayers(players, teamCounts, teamSize) {
-    console.log("🔄 STARTE ZUWEISUNG DER UNASSIGNED SPIELER...");
-
-    for (let player of players) {
-        // Finde das Team mit den wenigsten Spielern
-        let missingTeam = Object.entries(teamCounts).find(([team, count]) => count < teamSize);
-        
-        if (missingTeam) {
-            let teamTag = missingTeam[0];
-            player.teamTag = teamTag;
-            teamCounts[teamTag]++;
-            console.log(`✅ Spieler ${player.name} wurde zu Team ${teamTag} zugewiesen.`);
-        } else {
-            console.warn(`🚨 Konnte Spieler ${player.name} KEINEM Team zuweisen!`);
-        }
-    }
-
-    console.log("📌 Finale Team-Verteilung nach der Zuweisung:", teamCounts);
-}
 
 function performOCR() {
     let fileInput = document.getElementById("imageInput");
@@ -115,7 +88,7 @@ function performOCR() {
             let morph = new cv.Mat();
 
             cv.cvtColor(resized, gray, cv.COLOR_RGBA2GRAY, 0);
-            cv.threshold(gray, thresh, 140, 255, cv.THRESH_BINARY);
+            cv.threshold(gray, thresh, 165, 255, cv.THRESH_BINARY);
             cv.morphologyEx(thresh, morph, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 1)));
             cv.GaussianBlur(morph, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
 
@@ -131,7 +104,6 @@ function performOCR() {
             processedRoiCanvas.width = width;
             processedRoiCanvas.height = numPlayers * rowHeight;
 
-            let ocrPromises = [];
 
             for (let i = 0; i < numPlayers; i++) {
                 let y1 = startY + i * rowHeight;
@@ -148,7 +120,7 @@ function performOCR() {
                 cv.imshow(roiCanvasTemp, roi);
                 processedRoiCtx.drawImage(roiCanvasTemp, 0, i * rowHeight, width, rowHeight);
 
-                let ocrPromise = Tesseract.recognize(
+                Tesseract.recognize(
                     roiCanvasTemp.toDataURL(),
                     'eng',
                     {
@@ -156,48 +128,54 @@ function performOCR() {
                         tessedit_pageseg_mode: 'PSM_SINGLE_LINE',
                         tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
                     }
-                ).then(({ data: { text } }) => {
+                        ).then(({ data: { text } }) => {
                     let cleanName = text.trim();
                     if (cleanName) {
-                        let teamTag = cleanName[0];
-                        players.push({ name: cleanName, teamTag, points: placementPoints[i] });
-
+                        let points = placementPoints[i];
+                
+                        // 🏆 Neuer Team-Tag: Nimm den manuell gesetzten Wert
+                        let teamIndex = Math.floor(i / selectedTeamSize);
+                        let teamTag = teamTags[teamIndex];
+                
+                        if (!teamScores[teamTag]) {
+                            teamScores[teamTag] = 0;
+                        }
+                        teamScores[teamTag] += points;
+                
+                        players.push({ name: cleanName, teamTag });
+                
+                        // Spieler in HTML-Liste anzeigen
                         let li = document.createElement("li");
-                        li.textContent = `${cleanName} → ${placementPoints[i]} Punkte`;
+                        li.textContent = `${cleanName} → ${points} Punkte`;
                         playerList.appendChild(li);
-
+                
+                        // Name auf resizedCanvas zeichnen
                         resizedCtx.fillStyle = "yellow";
                         resizedCtx.font = "20px Arial";
                         resizedCtx.fillText(cleanName, startX + 5, y1 + rowHeight - 10);
                     }
                 });
-
-                ocrPromises.push(ocrPromise);
+                
                 roi.delete();
             }
 
-            await Promise.all(ocrPromises); // 🏆 OCR wartet auf alle Spieler
 
-          console.log("🚀 Starte Team-Logik...");
+            // 🏆 Team-Punkte berechnen
+            let teamScores = {};
+            for (let player of players) {
+                if (!teamScores[player.teamTag]) {
+                    teamScores[player.teamTag] = 0;
+                }
+                teamScores[player.teamTag] += player.points;
+            }
 
-    let teamSize = detectTeamSize(players);
-    if (!teamSize) {
-        alert("Fehler: Ungültige Spieleranzahl!");
-        return;
-    }
+            for (let team in teamScores) {
+                let li = document.createElement("li");
+                li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
+                teamScoresList.appendChild(li);
+            }
 
-    let { teamCounts, unassignedPlayers } = analyzeTeams(players);
-    assignUnassignedPlayers(unassignedPlayers, teamCounts, teamSize);
-
-    for (let team in teamCounts) {
-        let li = document.createElement("li");
-        li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
-        teamScoresList.appendChild(li);
-    }
-
-    console.log("🎯 Finale Teams:", teamCounts);
-
-
+            console.log("Finale Teams:", teamCounts);
 
             src.delete();
             resized.delete();
