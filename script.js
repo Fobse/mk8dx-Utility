@@ -1,9 +1,50 @@
 function resizeImage(src, maxWidth) {
     let dst = new cv.Mat();
     let scale = maxWidth / src.cols;
-    let newSize = new cv.Size(maxWidth, src.rows * scale);
+    let newSize = new cv.Size(src.cols * scale, src.rows * scale);
     cv.resize(src, dst, newSize, 0, 0, cv.INTER_AREA);
     return dst;
+}
+
+// 🏆 NEU: Team-Logik-Funktionen direkt darunter einfügen
+function detectTeamSize(players) {
+    let playerCount = players.length;
+    let possibleSizes = [2, 3, 4];
+
+    for (let size of possibleSizes) {
+        if (playerCount % size === 0) {
+            return size;
+        }
+    }
+    return null; // Fehler: Keine gültige Teamgröße gefunden
+}
+
+function analyzeTeams(players) {
+    let teamCounts = {};
+    let unassignedPlayers = [];
+
+    for (let player of players) {
+        let tag = player.teamTag;
+        if (tag) {
+            teamCounts[tag] = (teamCounts[tag] || 0) + 1;
+        } else {
+            unassignedPlayers.push(player);
+        }
+    }
+
+    return { teamCounts, unassignedPlayers };
+}
+
+function assignUnassignedPlayers(players, teamCounts, teamSize) {
+    for (let player of players) {
+        let missingTeam = Object.entries(teamCounts).find(([team, count]) => count < teamSize);
+        
+        if (missingTeam) {
+            let teamTag = missingTeam[0];
+            player.teamTag = teamTag;
+            teamCounts[teamTag]++;
+        }
+    }
 }
 
 function performOCR() {
@@ -50,7 +91,7 @@ function performOCR() {
             cv.cvtColor(resized, gray, cv.COLOR_RGBA2GRAY, 0);
 
             // Schwellenwert für binäres Bild
-            cv.threshold(gray, thresh, 165, 255, cv.THRESH_BINARY);
+            cv.threshold(gray, thresh, 140, 255, cv.THRESH_BINARY);
 
             // Text verbessern
             cv.morphologyEx(thresh, morph, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 1, (1))));
@@ -58,15 +99,17 @@ function performOCR() {
             // 3️⃣ Weichzeichnen (Gaussian Blur)
             cv.GaussianBlur(morph, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
 
-            // 3️⃣ ROI für Spielernamen extrahieren
-            let startX = 1013 * (1200 / img.width); // Anpassen an die neue Größe
-            let width = 287 * (1200 / img.width);
-            let startY = 72 * (1200 / img.width);
-            let rowHeight = 78 * (1200 / img.width);
+            // 5️⃣ ROI für Spielernamen extrahieren
+            let scale = 1200 / img.width;
+            let startX = 1013 * scale;
+            let width = 287 * scale;
+            let startY = 72 * scale;
+            let rowHeight = 78 * scale;
             let numPlayers = 12;
 
             let placementPoints = [15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
             let teamScores = {};
+            let players = [];
 
             // Canvas für die verarbeiteten ROIs vorbereiten
             processedRoiCanvas.width = width;
@@ -89,19 +132,19 @@ function performOCR() {
                 cv.imshow(roiCanvasTemp, roi);
 
                 processedRoiCtx.drawImage(roiCanvasTemp, 0, i * rowHeight, width, rowHeight);
-            
 
                 // OCR auf der verarbeiteten ROI ausführen
                     Tesseract.recognize(
                     roiCanvasTemp.toDataURL(),
-                        lang='eng', 
-                    { logger: m => console.log(m),
+                        'eng', 
+                    {
+                        logger: m => console.log(m),
                         tessedit_pageseg_mode: 'PSM_SINGLE_LINE',
                         tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
                     }
-                ).then(({ data: { text } }) => {
-                    let cleanName = text.trim();
-                    if (cleanName) {
+                         ).then(({ data: { text } }) => {
+                        let cleanName = text.trim();
+                         if (cleanName) {
                         let points = placementPoints[i];
 
                         // Erster Buchstabe als Team-Tag
@@ -111,6 +154,8 @@ function performOCR() {
                             teamScores[teamTag] = 0;
                         }
                         teamScores[teamTag] += points;
+
+                        players.push({ name: cleanName, teamTag });
 
                         // Spieler in HTML-Liste anzeigen
                         let li = document.createElement("li");
@@ -129,12 +174,22 @@ function performOCR() {
 
             // Team-Ergebnisse nach kurzer Verzögerung anzeigen
             setTimeout(() => {
+                let teamSize = detectTeamSize(players);
+                if (!teamSize) {
+                    alert("Fehler: Ungültige Spieleranzahl!");
+                    return;
+                }
+
+                let { teamCounts, unassignedPlayers } = analyzeTeams(players);
+                assignUnassignedPlayers(unassignedPlayers, teamCounts, teamSize);
+
                 for (let team in teamScores) {
                     let li = document.createElement("li");
                     li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
                     teamScoresList.appendChild(li);
                 }
-            }, 8000);
+                console.log("Finale Teams:", teamCounts);
+            }, 3000);
 
             // Speicher freigeben
             src.delete();
