@@ -56,10 +56,10 @@ function performOCR() {
             // cv.Canny(gray, canny, 60, 260)
         
             // Schwellenwert für binäres Bild
-            cv.threshold(gray, thresh, 170, 255, cv.THRESH_BINARY);
+            cv.threshold(gray, thresh, 165, 255, cv.THRESH_BINARY);
 
             // Text verbessern
-            cv.morphologyEx(thresh, morph, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(2, 2)));
+            cv.morphologyEx(thresh, morph, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 1, (1))));
 
             // Invertieren (weiße Schrift auf schwarzem Hintergrund)
             // cv.bitwise_not(gray, inverted);
@@ -110,7 +110,7 @@ function performOCR() {
                         lang='eng', 
                     { logger: m => console.log(m),
                         tessedit_pageseg_mode: 'PSM_SINGLE_LINE',
-                        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+                        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
                     }
                 ).then(({ data: { text } }) => {
                     let cleanName = text.trim();
