@@ -1,0 +1,50 @@
+#scoreTable {
+    background: rgba(50, 50, 50, 0.8); /* Dunkelgrau, halbtransparent */
+    padding: 15px;
+    border-radius: 10px;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px; /* Abstand zwischen Teams */
+}
+
+.team-column {
+    padding: 10px;
+    border: 2px solid white;
+    border-radius: 5px;
+    min-width: 80px;
+}
+
+.team-name {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.team-score {
+    font-size: 18px;
+    margin-top: 5px;
+}
+
+.team-gold {
+    color: gold;
+    border-color: gold;
+}
+
+.score-diff {
+    font-size: 16px;
+    font-weight: bold;
+    color: red;
+    margin: 0 10px;
+}
+
+#raceCount {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 16px;
+    color: #b366ff; /* Lila-Ton */
+    font-weight: bold;
+}
