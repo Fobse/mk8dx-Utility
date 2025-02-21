@@ -101,90 +101,20 @@ async function performOCR() {
             let rowHeight = 78 * scale;
             let numPlayers = 12;
             let placementPoints = [15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-            let players = [];
 
             processedRoiCanvas.width = width;
             processedRoiCanvas.height = numPlayers * rowHeight;
 
             console.log("🔎 Team-Tags gespeichert:", teamTags);
 
-            // 📌 OCR-Erkennung als Promises speichern
-            let ocrPromises = [];
-
-            for (let i = 0; i < numPlayers; i++) {
-                let y1 = startY + i * rowHeight;
-                let roi = blurred.roi(new cv.Rect(startX, y1, width, rowHeight));
-
-                resizedCtx.strokeStyle = "red";
-                resizedCtx.lineWidth = 2;
-                resizedCtx.strokeRect(startX, y1, width, rowHeight);
-
-                let roiCanvasTemp = document.createElement("canvas");
-                roiCanvasTemp.width = width;
-                roiCanvasTemp.height = rowHeight;
-                let roiCtxTemp = roiCanvasTemp.getContext("2d");
-                cv.imshow(roiCanvasTemp, roi);
-                processedRoiCtx.drawImage(roiCanvasTemp, 0, i * rowHeight, width, rowHeight);
-
-                let ocrPromise = Tesseract.recognize(
-                    roiCanvasTemp.toDataURL(),
-                    'eng',
-                    {
-                        logger: m => console.log(m),
-                        tessedit_pageseg_mode: 'PSM_SINGLE_LINE',
-                        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-                    }
-                ).then(({ data: { text } }) => {
-                    let cleanName = text.trim();
-                    if (cleanName) {
-                        let points = placementPoints[i];
-
-                        // 🏆 Richtige Team-Zuordnung
-                        let teamIndex = Math.floor(i / selectedTeamSize);
-                        let teamTag = teamTags[teamIndex];
-
-                        console.log(`🎯 Spieler erkannt: ${cleanName} → ${points} Punkte → Team: ${teamTag}`);
-
-                        players.push({ name: cleanName, teamTag, points });
-
-                        // Spieler in HTML-Liste anzeigen
-                        let li = document.createElement("li");
-                        li.textContent = `${cleanName} → ${points} Punkte (${teamTag})`;
-                        playerList.appendChild(li);
-
-                        // Name auf resizedCanvas zeichnen
-                        resizedCtx.fillStyle = "yellow";
-                        resizedCtx.font = "20px Arial";
-                        resizedCtx.fillText(cleanName, startX + 5, y1 + rowHeight - 10);
-                    } else {
-                        console.warn(`⚠️ Spieler an Position ${i + 1} wurde nicht erkannt!`);
-                    }
-                });
-
-                ocrPromises.push(ocrPromise);
-                roi.delete();
-            }
-
-            // 📌 Warte auf ALLE OCR-Ergebnisse, dann Punkte berechnen
-            await Promise.all(ocrPromises);
-
-            let teamScores = {}; // Team-Punkte zurücksetzen
-
-            for (let player of players) {
-                if (!teamScores[player.teamTag]) {
-                    teamScores[player.teamTag] = 0;
-                }
-                teamScores[player.teamTag] += player.points;
-            }
-
-            console.log("🏆 Finale Team-Ergebnisse:", teamScores);
-
-            // 📌 Ergebnisse in HTML ausgeben
-            teamScoresList.innerHTML = ""; // Vorherige Ergebnisse löschen
-            for (let team in teamScores) {
-                let li = document.createElement("li");
-                li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
-                teamScoresList.appendChild(li);
+            // OCR separat ausführen
+            let players = await recognizePlayers(blurred, startX, startY, width, rowHeight, numPlayers, placementPoints, resizedCtx, processedRoiCtx);
+            
+            // Wenn OCR erfolgreich war → Punkte berechnen
+            if (players.length > 0) {
+                calculateTeamScores(players, teamScoresList);
+            } else {
+                console.warn("⚠️ Keine Spieler erkannt!");
             }
 
             // Speicher freigeben
@@ -198,4 +128,79 @@ async function performOCR() {
     };
 
     reader.readAsDataURL(file);
+}
+
+// 🎯 **1️⃣ Separater OCR-Prozess**
+async function recognizePlayers(blurred, startX, startY, width, rowHeight, numPlayers, placementPoints, resizedCtx, processedRoiCtx) {
+    let players = [];
+    let ocrPromises = [];
+
+    for (let i = 0; i < numPlayers; i++) {
+        let y1 = startY + i * rowHeight;
+        let roi = blurred.roi(new cv.Rect(startX, y1, width, rowHeight));
+
+        resizedCtx.strokeStyle = "red";
+        resizedCtx.lineWidth = 2;
+        resizedCtx.strokeRect(startX, y1, width, rowHeight);
+
+        let roiCanvasTemp = document.createElement("canvas");
+        roiCanvasTemp.width = width;
+        roiCanvasTemp.height = rowHeight;
+        let roiCtxTemp = roiCanvasTemp.getContext("2d");
+        cv.imshow(roiCanvasTemp, roi);
+        processedRoiCtx.drawImage(roiCanvasTemp, 0, i * rowHeight, width, rowHeight);
+
+        let ocrPromise = Tesseract.recognize(
+            roiCanvasTemp.toDataURL(),
+            'eng',
+            {
+                logger: m => console.log(m),
+                tessedit_pageseg_mode: 'PSM_SINGLE_LINE',
+                tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+            }
+        ).then(({ data: { text } }) => {
+            let cleanName = text.trim();
+            if (cleanName) {
+                let points = placementPoints[i];
+
+                // 🏆 Richtige Team-Zuordnung
+                let teamIndex = Math.floor(i / selectedTeamSize);
+                let teamTag = teamTags[teamIndex];
+
+                console.log(`🎯 Spieler erkannt: ${cleanName} → ${points} Punkte → Team: ${teamTag}`);
+
+                players.push({ name: cleanName, teamTag, points });
+            } else {
+                console.warn(`⚠️ Spieler an Position ${i + 1} wurde nicht erkannt!`);
+            }
+        });
+
+        ocrPromises.push(ocrPromise);
+        roi.delete();
+    }
+
+    await Promise.all(ocrPromises);
+    return players;
+}
+
+// 🏆 **2️⃣ Punkte nach der OCR berechnen**
+function calculateTeamScores(players, teamScoresList) {
+    let teamScores = {}; // Team-Punkte zurücksetzen
+
+    for (let player of players) {
+        if (!teamScores[player.teamTag]) {
+            teamScores[player.teamTag] = 0;
+        }
+        teamScores[player.teamTag] += player.points;
+    }
+
+    console.log("🏆 Finale Team-Ergebnisse:", teamScores);
+
+    // 📌 Ergebnisse in HTML ausgeben
+    teamScoresList.innerHTML = ""; // Vorherige Ergebnisse löschen
+    for (let team in teamScores) {
+        let li = document.createElement("li");
+        li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
+        teamScoresList.appendChild(li);
+    }
 }
