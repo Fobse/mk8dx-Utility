@@ -196,7 +196,6 @@ function findTeamByName(playerName) {
     return "Unbekannt"; // Falls kein Team-Tag passt
 }
 
-// 🏆 **Team-Punkte korrekt berechnen**
 function calculateTeamScores(players, teamScoresList) {
     let teamScores = {};
 
@@ -207,12 +206,50 @@ function calculateTeamScores(players, teamScoresList) {
         teamScores[player.teamTag] += player.points;
     }
 
-    console.log("🏆 Finale Team-Ergebnisse:", teamScores);
+    console.log("🏆 Finale Team-Ergebnisse dieses Rennens:", teamScores);
 
-    teamScoresList.innerHTML = "";
+    // Speichern der Ergebnisse
+    saveTeamScores(teamScores);
+
+    // Aktualisierte Gesamtpunkte anzeigen
+    loadTeamScores();
+}
+// 🏆 **Speicherung der Team-Punkte über mehrere Rennen**
+function saveTeamScores(teamScores) {
+    let savedScores = JSON.parse(localStorage.getItem("teamScores")) || {};
+
+    // Addiere neue Punkte zu den bestehenden
     for (let team in teamScores) {
-        let li = document.createElement("li");
-        li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
-        teamScoresList.appendChild(li);
+        if (!savedScores[team]) {
+            savedScores[team] = 0;
+        }
+        savedScores[team] += teamScores[team];
     }
+
+    // Speichern in localStorage
+    localStorage.setItem("teamScores", JSON.stringify(savedScores));
+
+    console.log("💾 Team-Punkte gespeichert:", savedScores);
+}
+
+// 🏆 **Lade und zeige die Gesamtpunktzahl**
+function loadTeamScores() {
+    let savedScores = JSON.parse(localStorage.getItem("teamScores")) || {};
+    let totalScoresList = document.getElementById("totalScores");
+    
+    totalScoresList.innerHTML = "";
+    console.log("📊 Gesamte Punktetabelle:", savedScores);
+
+    for (let team in savedScores) {
+        let li = document.createElement("li");
+        li.textContent = `Team ${team}: ${savedScores[team]} Punkte`;
+        totalScoresList.appendChild(li);
+    }
+}
+
+// 🏆 **Setze Punkte zurück (falls neue Runde beginnt)**
+function resetTeamScores() {
+    localStorage.removeItem("teamScores");
+    console.log("🗑️ Team-Punkte zurückgesetzt!");
+    loadTeamScores();
 }
