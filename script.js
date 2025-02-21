@@ -138,8 +138,8 @@ async function performOCR() {
                     let cleanName = text.trim();
                     if (cleanName) {
                         let points = placementPoints[i];
-                
-                        // 🏆 Richtiges Team anhand der eingegebenen Tags bestimmen
+
+                        // 🏆 Richtige Team-Zuordnung
                         let teamIndex = Math.floor(i / selectedTeamSize);
                         let teamTag = teamTags[teamIndex];
 
@@ -165,11 +165,11 @@ async function performOCR() {
                 roi.delete();
             }
 
-            // 📌 Warte auf ALLE OCR-Ergebnisse
+            // 📌 Warte auf ALLE OCR-Ergebnisse, dann Punkte berechnen
             await Promise.all(ocrPromises);
 
-            // 🏆 Team-Punkte berechnen (Richtige Zuordnung!)
-            let teamScores = {};
+            let teamScores = {}; // Team-Punkte zurücksetzen
+
             for (let player of players) {
                 if (!teamScores[player.teamTag]) {
                     teamScores[player.teamTag] = 0;
@@ -180,6 +180,7 @@ async function performOCR() {
             console.log("🏆 Finale Team-Ergebnisse:", teamScores);
 
             // 📌 Ergebnisse in HTML ausgeben
+            teamScoresList.innerHTML = ""; // Vorherige Ergebnisse löschen
             for (let team in teamScores) {
                 let li = document.createElement("li");
                 li.textContent = `Team ${team}: ${teamScores[team]} Punkte`;
