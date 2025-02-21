@@ -218,7 +218,6 @@ function calculateTeamScores(players, teamScoresList) {
 function saveTeamScores(teamScores) {
     let savedScores = JSON.parse(localStorage.getItem("teamScores")) || {};
 
-    // Addiere neue Punkte zu den bestehenden
     for (let team in teamScores) {
         if (!savedScores[team]) {
             savedScores[team] = 0;
@@ -226,11 +225,12 @@ function saveTeamScores(teamScores) {
         savedScores[team] += teamScores[team];
     }
 
-    // Speichern in localStorage
     localStorage.setItem("teamScores", JSON.stringify(savedScores));
-
     console.log("💾 Team-Punkte gespeichert:", savedScores);
+
+    incrementRaceCount(); // **Neues Rennen zählen**
 }
+
 
 // 🏆 **Lade und zeige die Gesamtpunktzahl**
 function loadTeamScores() {
@@ -252,4 +252,78 @@ function resetTeamScores() {
     localStorage.removeItem("teamScores");
     console.log("🗑️ Team-Punkte zurückgesetzt!");
     loadTeamScores();
+}
+
+function updateScoreTable() {
+    let savedScores = JSON.parse(localStorage.getItem("teamScores")) || {};
+    let scoreTable = document.getElementById("scoreTable");
+    let raceCountElement = document.getElementById("raceCount");
+
+    if (Object.keys(savedScores).length === 0) {
+        scoreTable.innerHTML = "<p>Noch keine Punkte vorhanden!</p>";
+        return;
+    }
+
+    // **Punkte sortieren (höchste zuerst)**
+    let sortedTeams = Object.entries(savedScores).sort((a, b) => b[1] - a[1]);
+
+    // **Hauptteam bestimmen (das zuerst eingegebene Team)**
+    let mainTeam = Object.keys(teamTags)[0];  // Team 1 ist das erste eingegebene Team
+    console.log("🎖️ Hauptteam:", mainTeam);
+
+    // **Tabelle aufbauen**
+    scoreTable.innerHTML = "";
+
+    sortedTeams.forEach((team, index) => {
+        let teamName = team[0];
+        let teamPoints = team[1];
+
+        let teamDiv = document.createElement("div");
+        teamDiv.classList.add("team-column");
+
+        if (teamName === teamTags[mainTeam]) {
+            teamDiv.classList.add("team-gold"); // Team 1 gold färben
+        }
+
+        let nameDiv = document.createElement("div");
+        nameDiv.classList.add("team-name");
+        nameDiv.textContent = teamName;
+
+        let pointsDiv = document.createElement("div");
+        pointsDiv.classList.add("team-score");
+        pointsDiv.textContent = teamPoints;
+
+        teamDiv.appendChild(nameDiv);
+        teamDiv.appendChild(pointsDiv);
+        scoreTable.appendChild(teamDiv);
+
+        // **Punktedifferenz berechnen & anzeigen**
+        if (index > 0) {
+            let diff = sortedTeams[index - 1][1] - teamPoints;
+            let diffDiv = document.createElement("div");
+            diffDiv.classList.add("score-diff");
+            diffDiv.textContent = `-${diff}`;
+            scoreTable.appendChild(diffDiv);
+        }
+    });
+
+    // **Rennen-Zähler aktualisieren**
+    let racesDone = parseInt(localStorage.getItem("raceCount")) || 0;
+    raceCountElement.textContent = `Rennen: ${racesDone}`;
+}
+
+// 🏆 Rennen zählen (nach jedem OCR-Lauf)
+function incrementRaceCount() {
+    let racesDone = parseInt(localStorage.getItem("raceCount")) || 0;
+    racesDone++;
+    localStorage.setItem("raceCount", racesDone);
+    updateScoreTable();
+}
+
+// 🏆 Zurücksetzen der Punkte UND Rennen
+function resetScoresAndRaces() {
+    localStorage.removeItem("teamScores");
+    localStorage.removeItem("raceCount");
+    console.log("🗑️ Alle Punkte und Rennen zurückgesetzt!");
+    updateScoreTable();
 }
