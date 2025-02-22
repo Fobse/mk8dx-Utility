@@ -1,53 +1,65 @@
 #scoreTable {
     display: flex;
-    align-items: center;
     justify-content: center;
     padding: 15px;
     border-radius: 10px;
-    background: rgba(50, 50, 50, 0.8);
-    color: white;
+    background: rgba(70, 70, 70, 0.3);
+    color: rgb(240, 240, 240);
     font-family: Arial, sans-serif;
-    position: relative; /* Damit das #raceCount absolut darin platziert werden kann */
-    max-width: 80%; /* Passt sich an, bleibt aber nicht zu groß */
-    min-width: 300px; /* Verhindert zu kleine Tabellen */
-    margin: auto; /* Zentriert es */
-
-    #raceCount {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    font-size: 16px;
-    color: #b366ff; /* Lila-Ton */
-    font-weight: bold;
-}
+    font-size: 24px;
+    width: fit-content;
+    margin: auto;
 }
 
+/* Setzt die Team-Spalten nebeneinander */
+.table-wrapper {
+    display: flex;
+    justify-content: center; /* Horizontale Anordnung */
+}
+
+/* Container für ein Team + untere Box */
+.team-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* **Feste Größe für Team-Spalte** */
 .team-column {
+    width: 100px;  /* Fixe Breite */
+    height: 80px;  /* Fixe Höhe */
     padding: 10px;
-    border: 2px solid white;
+    border: 1px solid rgb(220, 220, 220);
     border-radius: 5px;
-    min-width: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
 }
 
-.team-name {
-    font-size: 20px;
+/* **Feste Größe für untere Box** */
+.bottom-box {
+    width: 100px;
+    height: 20px;
+    text-align: left;
+    font-size: 17px;
     font-weight: bold;
+    padding: 4px;
+    border-radius: 5px;
+    background: rgba(70, 70, 70, 0);
 }
 
-.team-score {
-    font-size: 18px;
-    margin-top: 5px;
-}
-
+/* Farben für besondere Elemente */
 .team-gold {
     color: gold;
     border-color: gold;
 }
 
-.score-diff {
-    font-size: 16px;
+.race-count {
+    color: #c23fd9 !important;
     font-weight: bold;
-    color: red;
-    margin: 0 10px;
 }
 
+.score-diff {
+    color: rgb(252, 55, 55);
+}
