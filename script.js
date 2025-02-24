@@ -28,7 +28,7 @@ function setTeamSize(size) {
 // 🏆 2️⃣ Team-Tags aus Eingaben speichern
 function applyTeamTags() {
     if (!selectedTeamSize) {
-        alert("Bitte erst eine Teamgröße wählen!");
+        alert("Select Mode First!");
         return;
     }
 
@@ -40,19 +40,18 @@ function applyTeamTags() {
         if (tag) {
             teamTags[i] = tag;
         } else {
-            alert("Bitte alle Team-Tags ausfüllen!");
+            alert("Fill In all Team-Tags!");
             return;
         }
     }
 
     console.log("📌 Gespeicherte Team-Tags:", teamTags);
-    alert("Team-Tags wurden übernommen!");
 }
 
 
 // 🏆 Teamzuweisung nach Name (anstatt nur nach Platzierung!)
-async function performOCR() {
-    let fileInput = document.getElementById("imageInput");
+async function performOCR(imageData) {
+    // let fileInput = document.getElementById("imageInput");
     let playerList = document.getElementById("playerList");
     let teamScoresList = document.getElementById("teamScores");
     let resizedCanvas = document.getElementById("resizedCanvas");
@@ -61,29 +60,29 @@ async function performOCR() {
     let processedRoiCtx = processedRoiCanvas.getContext("2d");
 
     playerList.innerHTML = "";
-    teamScoresList.innerHTML = "";
+    // teamScoresList.innerHTML = "";
 
-    if (fileInput.files.length === 0) {
-        alert("Bitte ein Bild hochladen!");
-        return;
-    }
+   // if (fileInput.files.length === 0) {
+     //   alert("Bitte ein Bild hochladen!");
+       // return;
+    // }
 
     console.log("🚀 OCR-Analyse gestartet...");
 
-    let file = fileInput.files[0];
-    let reader = new FileReader();
+   // let file = fileInput.files[0];
+    // let reader = new FileReader();
 
-    reader.onload = function () {
-        let img = new Image();
-        img.src = reader.result;
+   // reader.onload = function () {
+       let img = new Image();
+       img.src = imageData;
 
-        img.onload = async function () {
-            let src = cv.imread(img);
-            let resized = resizeImage(src, 1200);
+       img.onload = async function () {
+            let resized = cv.imread(img);
+            // let resized = resizeImage(src, 1200);
 
-            resizedCanvas.width = resized.cols;
-            resizedCanvas.height = resized.rows;
-            cv.imshow(resizedCanvas, resized);
+           // resizedCanvas.width = resized.cols;
+           // resizedCanvas.height = resized.rows;
+           cv.imshow(resizedCanvas, resized);
 
             let gray = new cv.Mat();
             let blurred = new cv.Mat();
@@ -91,11 +90,11 @@ async function performOCR() {
             let morph = new cv.Mat();
 
             cv.cvtColor(resized, gray, cv.COLOR_RGBA2GRAY, 0);
-            cv.threshold(gray, thresh, 175, 255, cv.THRESH_BINARY);
-            cv.morphologyEx(thresh, morph, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 1)));
-            cv.GaussianBlur(morph, blurred, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+            cv.GaussianBlur(gray, morph, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+            cv.threshold(morph, thresh, 175, 255, cv.THRESH_BINARY_INV);
+            cv.morphologyEx(thresh, blurred, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 1)));
 
-            let scale = 1200 / img.width;
+            let scale = 1200 / 1920;
             let startX = 1013 * scale;
             let width = 287 * scale;
             let startY = 72 * scale;
@@ -170,16 +169,16 @@ async function performOCR() {
                 console.warn("⚠️ Keine Spieler erkannt!");
             }
 
-            src.delete();
+            // src.delete();
             resized.delete();
             gray.delete();
             blurred.delete();
             thresh.delete();
             morph.delete();
         };
-    };
+    // };
 
-    reader.readAsDataURL(file);
+    // reader.readAsDataURL(file);
 }
 
 // 🏆 **Neue Funktion: Finde das richtige Team anhand des Spielernamens**
@@ -260,14 +259,17 @@ function updateScoreTable() {
     let raceCountElement = document.getElementById("raceCount");
 
     if (Object.keys(savedScores).length === 0) {
-        scoreTable.innerHTML = "<p>Noch keine Punkte vorhanden!</p>";
+        scoreTable.innerHTML = "<p>Empty Scores!</p>";
         return;
     }
 
     // Punkte sortieren (höchste zuerst)
     let sortedTeams = Object.entries(savedScores).sort((a, b) => b[1] - a[1]);
 
-    // Rennen-Anzahl abrufen
+     // **Hauptteam bestimmen (das zuerst eingegebene Team)**
+     let mainTeam = Object.keys(teamTags)[0];  // Team 1 ist das erste eingegebene Team
+
+     // Rennen-Anzahl abrufen
     let racesDone = parseInt(localStorage.getItem("raceCount")) || 0;
 
     // **Tabelle neu aufbauen**
@@ -284,6 +286,10 @@ function updateScoreTable() {
         let teamColumn = document.createElement("div");
         teamColumn.classList.add("team-column");
 
+         // ⭐ Falls Team-Tag "1", goldene Klasse hinzufügen
+         if (teamName === teamTags[mainTeam]) {
+            teamColumn.classList.add("team-gold"); // Team 1 gold färben
+        }
         let nameDiv = document.createElement("div");
         nameDiv.classList.add("team-name");
         nameDiv.textContent = teamName;
@@ -329,6 +335,13 @@ function incrementRaceCount() {
     updateScoreTable();
 }
 
+// Zurücksetzen der Rennen 
+function resetRaceCount() {
+    localStorage.removeItem("raceCount");
+    console.log("🗑️ Rennen zurückgesetzt!");
+    updateScoreTable();
+}
+
 // 🏆 Zurücksetzen der Punkte UND Rennen
 function resetScoresAndRaces() {
     localStorage.removeItem("teamScores");
@@ -338,6 +351,24 @@ function resetScoresAndRaces() {
 }
 
 // 🏆 **Automatisches Aktualisieren der Tabelle**
+document.addEventListener("DOMContentLoaded", function () {
+    loadStoredTableData(); // 🔄 Lädt gespeicherte Tabelle beim Seitenstart
+});
+
+//Beim Laden der Seite
+function loadStoredTableData() {
+    let storedData = localStorage.getItem("teamScores");
+
+    if (storedData) {
+        console.log("📊 Lade gespeicherte Tabelle...");
+        let parsedData = JSON.parse(storedData);
+        updateScoreTable(parsedData);
+    } else {
+        console.log("ℹ️ Keine gespeicherten Tabellen-Daten gefunden.");
+    }
+}
+
+// Bei Veränderung der Punkte
 let lastScores = localStorage.getItem("teamScores");
 
 setInterval(() => {
@@ -346,4 +377,140 @@ setInterval(() => {
         updateScoreTable();
         lastScores = currentScores;
     }
-}, 1000);
+}, 3000);
+
+// Videoaufnahme
+async function startCapCard() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const videoElement = document.getElementById("videoFeed");
+        videoElement.srcObject = stream;
+    } catch (error) {
+        console.error("Fehler beim Zugriff auf die Kamera:", error);
+    }
+}
+
+// Videoaufnahme 
+let isOCRRunning = false;
+let isPaused = false;
+let checkLoopTimeout = null; // Speichert das Intervall
+
+document.getElementById("toggleOCR").addEventListener("click", function () {
+    if (!isOCRRunning) {
+        isOCRRunning = true;
+        console.log("✅ OCR-Prüfung gestartet.");
+        startCheckLoop();
+        this.textContent = "⏹ STOP"; // Button-Text ändern
+    } else {
+        isOCRRunning = false;
+        console.log("⛔ OCR-Prüfung gestoppt.");
+        clearTimeout(checkLoopTimeout); // Loop stoppen
+        checkLoopTimeout = null;
+        this.textContent = "🔄 START"; // Button-Text zurücksetzen
+    }
+});
+
+// 🛠 Prüfungsloop (läuft nur, wenn aktiv)
+function startCheckLoop() {
+    function loop() {
+        if (!isOCRRunning || isPaused) return; // 🛑 Stoppt, wenn OCR deaktiviert oder pausiert ist
+        captureAndProcessImage(); // Funktion ausführen
+        checkLoopTimeout = setTimeout(loop, 1000); // Wiederholen nach 1 Sekunde
+    }
+    loop();
+}
+
+// 📸 Bild erfassen und verarbeiten
+    async function captureAndProcessImage() {
+    if (isPaused) return; // Falls bereits pausiert, nichts tun
+    console.log("📸 Bild wird verarbeitet...");
+
+    let videoElement = document.getElementById("videoFeed");
+    let canvas = document.createElement("canvas");
+    canvas.width = 1200;
+    canvas.height = 675;
+    let ctx = canvas.getContext("2d");
+
+    // 📸 Screenshot des gesamten Videos
+    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+    // 🎯 Prüfbereich definieren
+    let areaX = 521;
+    let areaY = 584;
+    let areaWidth = 60;
+    let areaHeight = 40;
+
+    // 🎯 Prüfbereich ausschneiden
+    let checkCanvas = document.createElement("canvas");
+    checkCanvas.width = areaWidth;
+    checkCanvas.height = areaHeight;
+    let checkCtx = checkCanvas.getContext("2d");
+    checkCtx.drawImage(canvas, areaX, areaY, areaWidth, areaHeight, 0, 0, areaWidth, areaHeight);
+
+    // 🔎 Prüfbereich auf dem Browser-Canvas anzeigen
+    let previewCanvas = document.getElementById("previewCanvas");
+    let previewCtx = previewCanvas.getContext("2d");
+    previewCtx.drawImage(checkCanvas, 0, 0, areaWidth, areaHeight);
+
+    // 📌 OpenCV-Bildverarbeitung anwenden
+    let processedImageData = sampleProcess(checkCanvas);
+
+    // 🔎 OCR-Prüfung starten
+    let isValid = await performCheckOCR(processedImageData);
+
+    if (isValid) {
+        console.log("✅ Scoreboard erkannt! Starte OCR...");
+        isPaused = true; // 🛑 Prüfloop pausieren
+        let fullImageData = canvas.toDataURL("image/png"); 
+        performOCR(fullImageData); // ✅ Das geprüfte Bild wird an OCR gesendet
+
+        // ⏸️ 90 Sekunden Pause setzen
+        setTimeout(() => {
+        isPaused = false;
+        if (isOCRRunning) startCheckLoop(); // 🔄 OCR-Loop wieder starten!
+        }, 90000);
+    } else {
+        console.log("❌ Kein Scoreboard erkannt, Bild verworfen.");
+    }
+}
+
+// 🟢 OCR-Check für den Prüfbereich
+async function performCheckOCR(imageData) {
+    let detectedText = await sampleText(imageData);
+    return detectedText.includes("12");
+}
+
+// 🛠 OpenCV-Bildbearbeitung
+function sampleProcess(checkCanvas) {
+    let src = cv.imread(checkCanvas);
+    let dst = new cv.Mat();
+
+    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+    cv.threshold(dst, dst, 175, 255, cv.THRESH_BINARY);
+    cv.morphologyEx(dst, dst, cv.MORPH_CLOSE, cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(1, 1)));
+    cv.GaussianBlur(dst, dst, new cv.Size(3, 3), 0, 0, cv.BORDER_DEFAULT);
+
+    // 📌 Ergebnis auf Canvas zurückschreiben
+    cv.imshow(checkCanvas, dst);
+    src.delete();
+    dst.delete();
+
+    return checkCanvas.toDataURL("image/png");
+}
+
+// 📖 OCR-Funktion für den Prüfbereich
+async function sampleText(imageData) {
+    let result = await Tesseract.recognize(
+        imageData,
+        'eng',
+        {
+            logger: m => console.log(m),
+            tessedit_pageseg_mode: 'PSM_SINGLE_LINE',
+            tessedit_char_whitelist: "0123456789"
+        }
+    );
+
+    let detectedText = result.data.text.trim();
+    console.log("OCR-Ergebnis für Prüfung:", detectedText);
+    return detectedText;
+}
