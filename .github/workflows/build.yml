@@ -22,7 +22,7 @@ jobs:
       run: pip install pyinstaller
 
     - name: 🏗️ Mit PyInstaller kompilieren
-      run: pyinstaller --onefile --windowed --name Tobse.Auto.Score-v0.1 script.py
+      run: pyinstaller --onefile --windowed --name Tobse.Auto.Score-v0.1 --hidden-import=cv2 --hidden-import=easyocr --hidden-import=numpy --hidden-import=PyQt6.QtWidgets --hidden-import=PyQt6.QtGui --hidden-import=PyQt6.QtCore scipt.py
 
     - name: 📤 Datei hochladen (Windows, Mac, Linux)
       uses: actions/upload-artifact@v4
