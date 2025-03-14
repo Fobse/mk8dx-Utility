@@ -1,0 +1,31 @@
+name: Build Executables
+
+on: [push]  # Starte das Build bei jedem Push
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}  # Arbeite auf verschiedenen OS
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: 📥 Code aus dem Repo holen
+      uses: actions/checkout@v3
+
+    - name: 🐍 Python einrichten
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 📦 Abhängigkeiten installieren
+      run: pip install pyinstaller
+
+    - name: 🏗️ Mit PyInstaller kompilieren
+      run: pyinstaller --onefile --windowed --name Tobse.Auto.Score script.py
+
+    - name: 📤 Datei hochladen (Windows, Mac, Linux)
+      uses: actions/upload-artifact@v3
+      with:
+        name: Tobse.Auto.Score-${{ runner.os }}
+        path: dist/*
