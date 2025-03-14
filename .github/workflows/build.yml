@@ -11,10 +11,10 @@ jobs:
 
     steps:
     - name: 📥 Code aus dem Repo holen
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: 🐍 Python einrichten
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
@@ -22,10 +22,10 @@ jobs:
       run: pip install pyinstaller
 
     - name: 🏗️ Mit PyInstaller kompilieren
-      run: pyinstaller --onefile --windowed --name Tobse.Auto.Score script.py
+      run: pyinstaller --onefile --windowed --name Tobse.Auto.Score-v0.1 script.py
 
     - name: 📤 Datei hochladen (Windows, Mac, Linux)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: Tobse.Auto.Score-${{ runner.os }}
+        name: Tobse.Auto.Score-v0.1-${{ runner.os }}
         path: dist/*
