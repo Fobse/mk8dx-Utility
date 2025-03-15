@@ -19,7 +19,7 @@ jobs:
         python-version: '3.9'
 
     - name: 📦 Abhängigkeiten installieren
-      run: pip install pip install pyinstaller PyQt6 numpy opencv-python easyocr
+      run: pip install pyinstaller PyQt6 numpy opencv-python easyocr
 
     - name: 🏗️ Mit PyInstaller kompilieren
       run: pyinstaller --onefile --windowed --name AutoScore.Tobse-v0.1 script.py
