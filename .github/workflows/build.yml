@@ -16,7 +16,7 @@ jobs:
     - name: 🐍 Python einrichten
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.9'
 
     - name: 📦 Abhängigkeiten installieren
       run: pip install pip install pyinstaller PyQt6 numpy opencv-python easyocr
