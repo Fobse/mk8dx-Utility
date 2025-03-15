@@ -19,7 +19,7 @@ jobs:
         python-version: '3.9'
 
     - name: 📦 Abhängigkeiten installieren
-      run: pip install
+      run: pip install pyinstaller
 
     - name: 🏗️ Mit PyInstaller kompilieren
       run: pyinstaller --onefile --windowed --name AutoScore.Tobse-v0.1 script.py
