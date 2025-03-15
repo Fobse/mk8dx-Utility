@@ -296,9 +296,9 @@ class OCRApp(QWidget):
             # **Obere Box mit Teams und Punktestand**
             team_box = QLabel()
             team_box.setFixedSize(80, 60)
-            team_box.setStyleSheet("border: 1px solid rgb(230, 230, 230); border-radius: 5px; font-size: 26px; text-align: center;")
+            team_box.setStyleSheet("border-radius: 5px; font-size: 26px; text-align: center; flex-direction: column ;background-color: rgba(20,20,20,50%);")
             team_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
+            
             # **Untere Box mit Rennzahl und Differenz**
             bottom_box = QLabel()
             bottom_box.setFixedSize(80, 20)
@@ -568,7 +568,9 @@ class OCRApp(QWidget):
         if os.path.exists(races):
             with open(races, "r") as file:
                 try:
-                    return int(file.read().strip())
+                    data = json.load(file)
+                    race_count = data.get("race_count")
+                    return race_count
                 except:
                     return 0
         return 0
@@ -669,20 +671,21 @@ class OCRApp(QWidget):
                 team_box.setText(f"{team_name}: {team_points}")  # Concatenate team name and points
                 # Wenn das Team-Tag dem Hauptteam entspricht, wende den Gold-Stil an.
                 if team_name == main_team:
-                    team_box.setStyleSheet("border: 1px solid gold; border-radius: 5px; font-size: 26px; color: gold;")
+                    team_box.setStyleSheet("border-radius: 5px; font-size: 26px; color: gold; text-align: center; flex-direction: column; background-color: rgba(20,20,20,50%);")
                 else:
-                    team_box.setStyleSheet("border: 1px solid rgb(230,230,230); border-radius: 5px; font-size: 26px; color: rgb(240,240,240);")
+                    team_box.setStyleSheet("border-radius: 5px; font-size: 26px; color: rgb(240,240,240); text-align: center; flex-direction: column; background-color: rgba(20,20,20,50%);")
                 # Untere Box: Für das erste Team zeige Rennen, sonst Differenz zum vorherigen Team
                 if i == 0:
                     bottom_box.setText(f"Races: {race_count}")
-                    bottom_box.setStyleSheet("color: #c23fd9; font-weight: bold; font-size: 17px;")
+                    bottom_box.setStyleSheet("color: #c23fd9; font-weight: bold; font-size: 17px; text-align: left;")
                 else:
                     diff = sorted_teams[i-1][1] - team_points
                     bottom_box.setText(f"-{diff}")
                     bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px; text-align: left;")
             else:
                 # Falls weniger Teams als Container vorhanden sind, leere die restlichen Container
-                team_box.setText("0")
+                team_box.setText("")
+                team_box.setStyleSheet("background-color: rgba(0,0,0,0%);")
                 bottom_box.setText("")
 
 
