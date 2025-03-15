@@ -8,7 +8,7 @@ setup(
     options={
         "build_exe": {
             "packages": ["os", "sys", "cv2", "easyocr", "numpy", "PyQt6"],
-            "include_files": ["config.json", "assets/"],  # Falls du zusätzliche Dateien hast
+            #"include_files": ["config.json", "assets/"],  # Falls du zusätzliche Dateien hast
         }
     }
 )
