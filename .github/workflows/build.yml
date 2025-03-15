@@ -16,16 +16,16 @@ jobs:
     - name: 🐍 Python einrichten
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.9.6'
 
     - name: 📦 Abhängigkeiten installieren
-      run: pip install pyinstaller
+      run: pip install pip install pyinstaller PyQt6 numpy opencv-python easyocr
 
     - name: 🏗️ Mit PyInstaller kompilieren
-      run: pyinstaller --onefile --windowed --name Tobse.Auto.Score-v0.1 --hidden-import=cv2 --hidden-import=easyocr --hidden-import=numpy --hidden-import=PyQt6.QtWidgets --hidden-import=PyQt6.QtGui --hidden-import=PyQt6.QtCore script.py
+      run: pyinstaller --onefile --windowed --name AutoScore.Tobse-v0.1 script.py
 
     - name: 📤 Datei hochladen (Windows, Mac, Linux)
       uses: actions/upload-artifact@v4
       with:
-        name: Tobse.Auto.Score-v0.1-${{ runner.os }}
+        name: AutoScore.Tobse-v0.1-${{ runner.os }}
         path: dist/*
