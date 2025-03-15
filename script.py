@@ -13,6 +13,9 @@ class OCRApp(QWidget):
     def __init__(self):
         super().__init__()
 
+        # 🔵 EasyOCR Reader einmalig initialisieren
+        self.reader = easyocr.Reader(["en"])
+
         # Initialize team_tags
         self.team_tags = {}
 
@@ -366,7 +369,7 @@ class OCRApp(QWidget):
         num_players = 12
         placement_points = [15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 
-        reader = easyocr.Reader(["en"])  # EasyOCR-Reader erstellen
+        #reader = easyocr.Reader(["en"])  # EasyOCR-Reader erstellen
         players = []
 
         # 🎨 Originalbild-Kopie für Markierungen
@@ -378,7 +381,7 @@ class OCRApp(QWidget):
             roi = thresh[y1:y1 + row_height, start_x:start_x + width]
             
             # 🏆 OCR ausführen
-            result = reader.readtext(roi, detail=0, text_threshold=0.3, low_text=0.2)
+            result = self.reader.readtext(roi, detail=0, text_threshold=0.3, low_text=0.2)
 
             if result:
                 player_name = result[0].strip()
@@ -676,7 +679,7 @@ class OCRApp(QWidget):
                 else:
                     diff = sorted_teams[i-1][1] - team_points
                     bottom_box.setText(f"-{diff}")
-                    bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px;")
+                    bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px; text-align: left;")
             else:
                 # Falls weniger Teams als Container vorhanden sind, leere die restlichen Container
                 team_box.setText("0")
@@ -764,8 +767,8 @@ class OCRApp(QWidget):
 
     def sample_text(self, image):
         # image ist ein numpy-Array (z. B. das von sample_process verarbeitete ROI)
-        reader = easyocr.Reader(["en"])  # Alternativ: Du kannst den Reader auch global einmal initialisieren
-        result = reader.readtext(image, detail=0)
+        #reader = easyocr.Reader(["en"])  # Alternativ: Du kannst den Reader auch global einmal initialisieren
+        result = self.reader.readtext(image, detail=0)
         detected_text = " ".join([text for text in result])
         return detected_text.strip()
 
