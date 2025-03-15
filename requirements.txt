@@ -1,5 +1,0 @@
-cx-Freeze
-opencv-python
-easyocr
-numpy
-PyQt6
