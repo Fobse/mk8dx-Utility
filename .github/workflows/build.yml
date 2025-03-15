@@ -21,7 +21,7 @@ jobs:
       - name: 📦 Installiere Abhängigkeiten
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt  # Stelle sicher, dass alle Abhängigkeiten da sind
+          pip install cx-Freeze opencv-python easyocr numpy PyQt6
 
       - name: 🚀 Erstelle die Windows EXE mit cx_Freeze
         run: |
@@ -47,7 +47,7 @@ jobs:
       - name: 📦 Installiere Abhängigkeiten
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt  # Alle Abhängigkeiten installieren
+          pip install cx-Freeze opencv-python easyocr numpy PyQt6
 
       - name: 🚀 Erstelle die macOS App mit cx_Freeze
         run: |
