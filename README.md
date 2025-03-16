@@ -1,5 +1,5 @@
 <h1 align="center" >About</h1>
-This is a work in progress tool for the Mario Kart Szene, currently featuring:   
+This is a work in progress tool for the Mario Kart Scene, currently featuring:   
 
 -  Automated Scoreboard for 8dx Lounge, Teammodes 2v2, 3v3, 4v4
 
