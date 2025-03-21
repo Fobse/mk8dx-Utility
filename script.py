@@ -15,14 +15,11 @@ class OCRApp(QWidget):
 
         # 🔵 EasyOCR Reader einmalig initialisieren
         self.reader = easyocr.Reader(["en"])
+        self.readerjpn = easyocr.Reader(["ja"])
 
         # Initialize team_tags
         self.team_tags = {}
-
-        # Initialize UI components
-        self.ui = self  # Assuming self is the main UI object
-        self.ui.totalScoresList = QListWidget()  # Add this line to define totalScoresList
-        
+     
         # Initialize team_containers
         self.team_containers = {}  # Add this line to define team_containers
 
@@ -35,10 +32,10 @@ class OCRApp(QWidget):
         self.tabs = QTabWidget()
 
         # Tabs erstellen
-        self.tabs.addTab(self.create_control_tab(), "Steuerung")
+        self.tabs.addTab(self.create_control_tab(), "Main Control")
         self.tabs.addTab(self.create_video_tab(), "Video-Setup")
-        self.tabs.addTab(self.create_log_tab(), "OCR-Prozesse")
-        self.tabs.addTab(self.create_table_tab(), "Tabelle")
+        self.tabs.addTab(self.create_log_tab(), "OCR-Process")
+        self.tabs.addTab(self.create_table_tab(), "Table")
 
         layout.addWidget(self.tabs)
         self.setLayout(layout)
@@ -52,7 +49,7 @@ class OCRApp(QWidget):
             color: white;
         """)
 
-        self.setWindowTitle("OCR Scoreboard")
+        self.setWindowTitle("mk8dx Scoreboard")
         self.resize(800, 600)
 
         self.capture = None  # Speichert die aktive Capture Card
@@ -67,6 +64,7 @@ class OCRApp(QWidget):
         self.scoreboard_window.show()
 
 
+
     # 🔹 Tab 1: Steuerung & Einstellungen
     def create_control_tab(self):
         tab = QWidget()
@@ -74,23 +72,37 @@ class OCRApp(QWidget):
 
          # Modusauswahl
         mode_layout = QHBoxLayout()
-        self.mode2_btn = QPushButton("2er Teams")
-        self.mode3_btn = QPushButton("3er Teams")
-        self.mode4_btn = QPushButton("4er Teams")
+        self.mode2_btn = QPushButton("2v2")
+        self.mode3_btn = QPushButton("3v3")
+        self.mode4_btn = QPushButton("4v4")
+        self.mode6_btn = QPushButton("6v6")
 
         # Button-Größe anpassen
-        for btn in [self.mode2_btn, self.mode3_btn, self.mode4_btn]:
-            btn.setFixedSize(120, 40)  # Breite 120px, Höhe 40px
-            btn.setStyleSheet("background-color: blue; color: white; font-size: 14px; border-radius: 5px;")
+        for btn in [self.mode2_btn, self.mode3_btn, self.mode4_btn, self.mode6_btn]:
+            btn.setFixedSize(100, 40)  # Breite 120px, Höhe 40px
+            btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #3671c9;
+                    color: white; 
+                    font-size: 14px; 
+                    border-radius: 5px;
+                }
+                QPushButton:pressed {
+                    background-color: #1372ae;
+                }
+                              """)
             mode_layout.addWidget(btn)
 
         mode_layout.addWidget(self.mode2_btn)
         mode_layout.addWidget(self.mode3_btn)
         mode_layout.addWidget(self.mode4_btn)
+        mode_layout.addWidget(self.mode6_btn)
 
         self.mode2_btn.clicked.connect(lambda: self.set_team_size(2))
         self.mode3_btn.clicked.connect(lambda: self.set_team_size(3))
         self.mode4_btn.clicked.connect(lambda: self.set_team_size(4))
+        self.mode6_btn.clicked.connect(lambda: self.set_team_size(5))
+
 
         layout.addLayout(mode_layout)
 
@@ -99,19 +111,31 @@ class OCRApp(QWidget):
         layout.addLayout(self.team_tag_container)
 
         # 🏆 "Tags speichern"-Button
-        self.apply_tags_btn = QPushButton("Team-Tags übernehmen")
+        self.apply_tags_btn = QPushButton("Apply Team-Tags")
         self.apply_tags_btn.setFixedSize(200, 40)
-        self.apply_tags_btn.setStyleSheet("background-color: orange; color: black; font-size: 14px; border-radius: 5px;")
+        self.apply_tags_btn.setStyleSheet("""
+            QPushButton {
+                background-color: orange; 
+                color: black; 
+                font-size: 14px;
+                border-radius: 5px;
+            }
+            QPushButton:pressed {
+                background-color: darkorange;
+            }
+        """)
         self.apply_tags_btn.clicked.connect(self.apply_team_tags)
         layout.addWidget(self.apply_tags_btn)
 
         # Start- und Reset-Buttons
-        self.start_btn = QPushButton("Start OCR")
+        self.start_btn = QPushButton("Start")
         self.reset_btn = QPushButton("Reset")
 
         # Start-Button Styling & Standardmäßig deaktiviert
         self.start_btn.setFixedSize(150, 50)
         self.start_btn.setEnabled(False)  # Button erst deaktivieren!
+        self.condition1 = False
+        self.condition2 = False
         self.start_btn.setStyleSheet("""
             QPushButton {
                 background-color: green;
@@ -119,6 +143,9 @@ class OCRApp(QWidget):
                 font-size: 16px;
                 border-radius: 10px;
                 padding: 10px;
+            }
+            QPushButton:pressed {
+                background-color: darkgreen;
             }
             QPushButton:disabled {
                 background-color: gray;
@@ -131,11 +158,34 @@ class OCRApp(QWidget):
         # Reset Button Einstellungen
         self.reset_btn.clicked.connect(self.reset_scores)
         self.reset_btn.clicked.connect(self.reset_race_count)
+        self.reset_btn.setFixedSize(100, 30)
+        self.reset_btn.setStyleSheet("""
+            QPushButton {
+                background-color: red;
+                color: white;
+                font-size: 16px;
+                border-radius: 10px;
+                padding: 5px;
+            }
+            QPushButton:pressed {
+                background-color: darkred;
+            }
+        """)
 
         # 🟢 Manueller OCR-Button
-        self.manual_ocr_btn = QPushButton("Manuelle OCR auslösen")
-        self.manual_ocr_btn.setFixedSize(200, 50)
-        self.manual_ocr_btn.setStyleSheet("background-color: #007ACC; color: white; font-size: 16px; border-radius: 10px;")
+        self.manual_ocr_btn = QPushButton("Manual Trigger")
+        self.manual_ocr_btn.setFixedSize(150, 40)
+        self.manual_ocr_btn.setStyleSheet("""
+            QPushButton { 
+                background-color: #007ACC;
+                color: white;
+                font-size: 16px;
+                border-radius: 10px;
+            }
+            QPushButton:pressed {
+                background-color: #005A8C;
+            }
+            """)
         self.manual_ocr_btn.clicked.connect(self.capture_image_for_ocr)
 
 
@@ -177,9 +227,19 @@ class OCRApp(QWidget):
         tab = QWidget()
         layout = QVBoxLayout()
 
-        self.capture_btn = QPushButton("Capture Card verbinden")
+        self.capture_btn = QPushButton("Connect Capture Card")
         self.capture_btn.setFixedSize(200, 50)
-        self.capture_btn.setStyleSheet("background-color: orange; color: black; font-size: 16px; border-radius: 10px;")
+        self.capture_btn.setStyleSheet("""
+            QPushButton {
+                background-color: orange;
+                color: black;
+                font-size: 16px;
+                border-radius: 10px;
+            }
+            QPushButton:pressed {
+                background-color: darkorange;
+            }
+        """)
         self.capture_btn.clicked.connect(self.find_capture_cards)  # Klick ruft `find_capture_cards()` auf
         layout.addWidget(self.capture_btn)
 
@@ -189,18 +249,18 @@ class OCRApp(QWidget):
         layout.addWidget(self.device_select)
         
         # Vorschau Fenster für Capture Card
-        self.video_label = QLabel("📷 Video-Feed kommt hier hin")
+        self.video_label = QLabel("📷 Video-Feed")
         self.video_label.setFixedSize(640, 360)  # Oder eine andere passende Größe
         layout.addWidget(self.video_label)
 
-        # 🎥 Capture Card verbinden
-        self.capture_btn.clicked.connect(self.connect_capture_card)
 
         tab.setLayout(layout)
         return tab
     
 
     def find_capture_cards(self):
+        self.condition2 = True
+        self.check_conditions()
         self.device_select.clear()
         found_devices = []
 
@@ -216,11 +276,8 @@ class OCRApp(QWidget):
 
         if found_devices:
           self.device_select.addItems([f"Capture {i}" for i in found_devices])
-          self.capture_btn.setText("Capture Card gefunden ✅")
-          self.start_btn.setEnabled(True)  # Start-Button aktivieren
         else:
           print("❌ Keine Capture Card gefunden!")
-          self.capture_btn.setText("Keine Capture Card gefunden ❌")
     
 
     def select_capture_device(self, index):
@@ -240,7 +297,7 @@ class OCRApp(QWidget):
         if self.capture and self.capture.isOpened():
             ret, frame = self.capture.read()
             if ret:
-                frame = cv2.resize(frame, (640, 360))  # Skalieren
+                frame = cv2.resize(frame, (400, 225))  # Skalieren
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Farben anpassen
                 h, w, ch = frame.shape
                 bytes_per_line = ch * w
@@ -261,13 +318,13 @@ class OCRApp(QWidget):
         layout.addWidget(self.log_text)
 
         # 🎯 Originalbild mit erkanntem Text
-        self.ocr_output_label = QLabel("📜 OCR-Ergebnis")
+        self.ocr_output_label = QLabel("📜 OCR-Result")
         self.ocr_output_label.setFixedSize(600, 338)  # Standardgröße
         layout.addWidget(self.ocr_output_label)
 
         # 🎯 Verarbeitetes ROI-Bild
-        self.roi_output_label = QLabel("🔍 ROI-Analyse")
-        self.roi_output_label.setFixedSize(600, 338)  # Standardgröße
+        self.roi_output_label = QLabel("🔍 Processed-ROI")
+        self.roi_output_label.setFixedSize(400, 225)  # Standardgröße
         layout.addWidget(self.roi_output_label)
 
         tab.setLayout(layout)
@@ -295,8 +352,8 @@ class OCRApp(QWidget):
 
             # **Obere Box mit Teams und Punktestand**
             team_box = QLabel()
-            team_box.setFixedSize(80, 60)
-            team_box.setStyleSheet("border-radius: 5px; font-size: 26px; text-align: center; flex-direction: column ;background-color: rgba(20,20,20,50%);")
+            team_box.setFixedSize(80, 40)
+            team_box.setStyleSheet("border-radius: 5px; font-size: 22px; text-align: center; background-color: rgba(20,20,20,50%);")
             team_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
             
             # **Untere Box mit Rennzahl und Differenz**
@@ -318,17 +375,18 @@ class OCRApp(QWidget):
 
 
 
-    # 🎥 Capture Card verbinden
-    def connect_capture_card(self):
-        print("🎥 Capture Card verbunden!")
-        self.start_btn.setEnabled(True)  # Start-Button aktivieren
+    def check_conditions(self):
+        if self.condition1 and self.condition2:
+            self.start_btn.setEnabled(True)
+        else:
+            self.start_btn.setEnabled(False)
 
 
     # 📌 Team-Tags speichern
     def apply_team_tags(self):
         """ Speichert Team-Tags aus den Eingabefeldern. """
         if not self.selected_team_size:
-            QMessageBox.warning(self, "Fehler", "Bitte zuerst eine Teamgröße auswählen!")
+            QMessageBox.warning(self, "Error", "Select Mode!")
             return
 
         self.team_tags = {}  # Team-Tags zurücksetzen
@@ -339,28 +397,31 @@ class OCRApp(QWidget):
             if tag:
                 self.team_tags[i] = tag
             else:
-                QMessageBox.warning(self, "Fehler", "Bitte fülle alle Team-Tags aus!")
+                QMessageBox.warning(self,"Error", "Enter Every Team Tag!")
                 return
 
         print("📌 Gespeicherte Team-Tags:", self.team_tags)
+        self.condition1 = True
+        self.check_conditions()
+
 
 
     # Bildverarbeitung
     def perform_ocr(self, frame):
         """OCR-Prozess für Spielererkennung und Teamzuweisung starten, mit visueller Ausgabe."""
         if not self.capture or not self.capture.isOpened():
-            QMessageBox.warning(self, "Fehler", "Keine aktive Capture Card gefunden!")
+            QMessageBox.warning(self,"Error", "Setup your Capture Card!")
             return
 
         ret, frame = self.capture.read()
         if not ret:
-            QMessageBox.warning(self, "Fehler", "Fehler beim Einlesen des Frames!")
+            QMessageBox.warning(self,"Error", "failed capturing the Frame, make sure your Capture Card is connected.")
             return
 
         # 🔹 Bildverarbeitung mit OpenCV
         frame_resized = cv2.resize(frame, (1200 * 2, 675 * 2))  # Einheitliche Größe setzen
         frame_gray = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2GRAY)
-        _, thresh = cv2.threshold(frame_gray, 185, 255, cv2.THRESH_BINARY)
+        _, thresh = cv2.threshold(frame_gray, 175, 255, cv2.THRESH_BINARY)
         #morph = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, np.ones((1, 1), np.uint8))
 
         # 🔹 OCR-Bereich definieren
@@ -369,7 +430,6 @@ class OCRApp(QWidget):
         num_players = 12
         placement_points = [15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 
-        #reader = easyocr.Reader(["en"])  # EasyOCR-Reader erstellen
         players = []
 
         # 🎨 Originalbild-Kopie für Markierungen
@@ -382,6 +442,7 @@ class OCRApp(QWidget):
             
             # 🏆 OCR ausführen
             result = self.reader.readtext(roi, detail=0, text_threshold=0.3, low_text=0.2)
+            #result2 = self.readerjpn.readtext(roi, detail=0, text_threshold=0.3, low_text=0.2)
 
             if result:
                 player_name = result[0].strip()
@@ -402,6 +463,28 @@ class OCRApp(QWidget):
                 
                 # 🔥 Alle ROIs übereinanderstapeln
                 roi_combined[i * row_height:(i + 1) * row_height, :] = roi
+
+            #elif result2:
+                #player_name = result2[0].strip()
+                #team_tag = self.find_team_by_name(player_name)
+                #if team_tag == "0":
+                #    break
+                #points = placement_points[i]
+                
+                #print(f"🎯 Spieler erkannt: {player_name} → {points} Punkte → Team: {team_tag}")
+                #players.append((player_name, team_tag, points))
+
+                # 🔴 Bounding Box ins Originalbild zeichnen
+                #top_left = (start_x, y1)
+                #bottom_right = (start_x + width, y1 + row_height)
+                #cv2.rectangle(frame_annotated, top_left, bottom_right, (0, 255, 0), 2)
+
+                # 🏷️ Erkannten Text einzeichnen
+                #cv2.putText(frame_annotated, player_name, (start_x + 5, y1 + row_height - 5),
+                #            cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 255),5)
+                
+                # 🔥 Alle ROIs übereinanderstapeln
+                #roi_combined[i * row_height:(i + 1) * row_height, :] = roi
 
             else:
                 print(f"⚠️ Spieler an Position {i + 1} nicht erkannt!")
@@ -450,19 +533,13 @@ class OCRApp(QWidget):
         #return thresh 
 
 
-    def display_ocr_results(self, players):
-        """Zeigt erkannte Spieler und Punkte im OCR-Log."""
-        self.log_text.clear()
-        for name, team, points in players:
-            self.log_text.append(f"{name} → {points} Punkte ({team})")
 
-
-    def find_team_by_name(self, player_name):
-        """Sucht nach einem gespeicherten Team-Tag basierend auf dem Spielernamen."""
-        for team_id, tag in self.team_tags.items():
-            if tag.upper() in player_name.upper():
-                return tag
-        return "Unbekannt"
+    #def find_team_by_name(self, player_name):
+     #   """Sucht nach einem gespeicherten Team-Tag basierend auf dem Spielernamen."""
+      #  for team_id, tag in self.team_tags.items():
+       #     if tag.upper() in player_name.upper():
+        #        return tag
+        #return "Unbekannt"
     
 
     def calculate_team_scores(self, players):
@@ -488,7 +565,8 @@ class OCRApp(QWidget):
 
     def display_team_scores(self, sorted_teams):
         """Zeigt die berechneten Team-Punkte in der OCR-Log-Tabelle an."""
-        self.log_text.append("\n🏆 Teamwertung:")
+        self.log_text.clear()
+        self.log_text.append("\n🏆 Teamwertung: ")
         for rank, (team, points) in enumerate(sorted_teams, start=1):
             self.log_text.append(f"{rank}. {team}: {points} Punkte")
 
@@ -520,7 +598,6 @@ class OCRApp(QWidget):
     def load_team_scores(self):
         """Lädt die gespeicherten Team-Punkte und zeigt sie im UI an."""
         file_path = "team_scores.json"
-        total_scores_list = self.ui.totalScoresList  # UI-Element für Anzeige
 
         if os.path.exists(file_path):
             with open(file_path, "r") as file:
@@ -529,11 +606,6 @@ class OCRApp(QWidget):
             saved_scores = {}
 
         print(f"📊 Gesamte Punktetabelle: {saved_scores}")
-
-        # Anzeige im UI
-        total_scores_list.clear()
-        for team, points in saved_scores.items():
-            total_scores_list.addItem(f"Team {team}: {points} Punkte")
 
         return saved_scores
 
@@ -576,7 +648,7 @@ class OCRApp(QWidget):
         return 0
 
 
-    # 🛠 Team-Punkte zurücksetzen 
+    # 🛠 Team-Punkte zurücksetzen und Automatik stoppen
     def reset_scores(self):
         """Löscht die gespeicherten Team-Punkte."""
         scores = "team_scores.json"
@@ -586,6 +658,13 @@ class OCRApp(QWidget):
 
         print("🗑️ Team-Punkte zurückgesetzt!")
         self.load_team_scores()  # UI aktualisieren
+        self.is_ocr_running = False
+        self.start_btn.setText("🔄 START")
+        self.condition1 = False
+        self.check_conditions()
+        print("⛔ OCR-Prüfung gestoppt.")
+        self.team_tags = {}  # Team-Tags zurücksetzen
+        self.update_score_table()  
 
 
     def reset_race_count(self):
@@ -620,8 +699,10 @@ class OCRApp(QWidget):
 
             else:
                 print("❌ Fehler beim Erfassen des Bildes!")
+                QMessageBox.warning(self,"Error", "Failed Capturing Image!")
         else:
             print("❌ Keine aktive Capture Card gefunden!")
+            QMessageBox.warning(self,"Error", "No Active Capture Card!")
 
 
     def find_team_by_name(self, player_name):
@@ -637,7 +718,7 @@ class OCRApp(QWidget):
             elif player_name.endswith(team_tag):
                 return team_tag  # Nur zuordnen, wenn der Tag am Ende steht
         
-        return "Unbekannt"  # Falls kein passendes Team gefunden wurde
+        return "unbekannt"  # Falls kein passendes Team gefunden wurde
     
 
     def update_score_table(self):
@@ -668,12 +749,12 @@ class OCRApp(QWidget):
             team_box, bottom_box = self.team_containers[i]
             if i < len(sorted_teams):
                 team_name, team_points = sorted_teams[i]
-                team_box.setText(f"{team_name}: {team_points}")  # Concatenate team name and points
+                team_box.setText(f"{team_name} {team_points}")  # Concatenate team name and points
                 # Wenn das Team-Tag dem Hauptteam entspricht, wende den Gold-Stil an.
                 if team_name == main_team:
-                    team_box.setStyleSheet("border-radius: 5px; font-size: 26px; color: gold; text-align: center; flex-direction: column; background-color: rgba(20,20,20,50%);")
+                    team_box.setStyleSheet("border-radius: 5px; font-size: 26px; color: gold; text-align: center; background-color: rgba(20,20,20,50%);")
                 else:
-                    team_box.setStyleSheet("border-radius: 5px; font-size: 26px; color: rgb(240,240,240); text-align: center; flex-direction: column; background-color: rgba(20,20,20,50%);")
+                    team_box.setStyleSheet("border-radius: 5px; font-size: 26px; color: rgb(240,240,240); text-align: center; background-color: rgba(20,20,20,50%);")
                 # Untere Box: Für das erste Team zeige Rennen, sonst Differenz zum vorherigen Team
                 if i == 0:
                     bottom_box.setText(f"Races: {race_count}")
