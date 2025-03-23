@@ -95,7 +95,7 @@ Setting up the results Table is very simple. After opening the program, add a Wi
 <h6 align="center" >Here you will find Information and Knowledge about this program and how it works. Refer to this place if you run into issues, this will be updated in case i make changes</h6>
 
 
-<h4 align="center" >General Stuff</h4>
+<h3 align="center" >General Stuff</h3>
 
 Team-Tag1 will be shown in golden color on the Scoreboard
 
@@ -104,25 +104,35 @@ The results of detection will always be shown in the tab "Process"
 The program currently only supports english language, so only Romanian letters and simple symbols (e.g. (),",[],/)
 
 
-<h4 align="center" >Setting Up</h4>
+<h3 align="center" >Setting Up</h3>
 
 Go into the Tab "Video-Setup" and press the Button. The program will search for 10 external Video Devices connected to your Computer, list them and show the active Device below. If your Capture Card is not shown immediatly, select the other Devices from the dropdown list
 
 
-<h4 align="center" >Automatic Mode</h4>
+<h3 align="center" >Automatic Mode</h3>
 <h6 align="center" >Important Note: This program does not read any of the numbers on the Scoreboard, it only reads from the namefield and applies scores based on locations. Meaning, this program only works race by race and needs every races Scoreboard. Make sure to take Screenshots at the end of a race, before the Scoreboard is sorted</h6>
 
-The "Start" Button will be activated, once you connected your Capture Card and applied the Team-Tags. 
+The "Start" Button will be activated, once you connected your Capture Card and applied the Team-Tags
 
-The program triggers once it "sees" the 12th player and after a succesful trigger, it will be set on cooldown for 120 seconds. 
+The program triggers once it "sees" the 12th player and after a succesful trigger, it will be set on cooldown for 120 seconds
 
-Feel free to test it with old Screenshots. 
+Feel free to test it with old Screenshots
 
 Make sure to use the "Reset" Button before starting, as the memory will be saved within the program even after closing it. Reset will delete all Team-Tags, Scores and the Racecount from Memory and it will stop the Automatic Mode.
 
 
-<h4 align="center" >Manual Trigger and 6v6</h4>
+<h3 align="center" >Manual Trigger and 6v6</h3>
 
 The Button "Manual Trigger" can be used anytime, even without Team-Tags, results will be shown.
 
 As this program can not detect special symbols of Clantags, you need to use the "Manual Trigger" to get the "Automatic Mode" working for 6v6. Take a Screenshot and Run the "Manual Trigger" without adding Team-Tags. Look at the Results, all 6 players Tags of a team should be detected with the same letter(s). Use the Results to Apply the Team-Tags
+
+
+<h3 align="center" >Score-Settings Tab</h3>
+<h6 align="center" >In this Tab of the Program you can adjust the Scores of the Teams, changes are immediatly applied to the Table</h6>
+
+Teams are sorted by Points, use the "+" and "-" Button to the right of a Team to adjust the Score (Increments of 1 for each press)
+
+"Missing" Points tell you that a Player could not be occupied to a team and theire Points are collected in the List. Make sure to remove the Points from "Missing" when you give them to a Team
+
+A total Counter is running in the Background, it will tell you when the Points of all Teams do not match with the Race. You will see it when you adjust the Scores
