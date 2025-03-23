@@ -6,47 +6,38 @@ on:
 
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
-
-    runs-on: ${{ matrix.os }}
+        os: [macos-latest, windows-latest]
 
     steps:
-      - name: 🛎️ Repository klonen
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v3
 
-      - name: 🐍 Python installieren
+      - name: 🐍 Install Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
 
-      - name: 📦 Abhängigkeiten installieren
-        run: pip install -r requirements.txt
-
-      - name: 🔧 PyInstaller ausführen
+      - name: 📦 Install Dependencies
         run: |
-          pyinstaller --name Mk8dx-Utility-Tobse main.py
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: 🔨 Build Executable
+        run: |
+          pyinstaller --onefile --windowed --name=MeineApp main.py
         shell: bash
 
-      - name: 📂 Artefakte hochladen
+      - name: 📤 Upload Executable
         uses: actions/upload-artifact@v3
         with:
           name: MeineApp-${{ matrix.os }}
-          path: dist/Mk8dx-Utility-Tobse
-  
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Artefakte herunterladen
-        uses: actions/download-artifact@v3
-        with:
-          path: artifacts
+          path: dist/MeineApp*
 
-      - name: 🚀 Release erstellen
+      - name: 🚀 Release Build
         uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/**
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: dist/MeineApp*
