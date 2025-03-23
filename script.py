@@ -4,7 +4,7 @@ import numpy as np
 import sys
 import json
 import os
-from PyQt6.QtWidgets import QApplication, QWidget, QTabWidget, QVBoxLayout, QPushButton, QLabel, QTextEdit, QHBoxLayout, QComboBox, QLineEdit, QMessageBox, QListWidget
+from PyQt6.QtWidgets import QApplication, QWidget, QTabWidget, QVBoxLayout, QPushButton, QLabel, QTextEdit, QHBoxLayout, QComboBox, QLineEdit, QMessageBox, QListWidget, QListWidgetItem
 from PyQt6.QtGui import QPixmap, QImage, QPalette, QColor
 from PyQt6.QtCore import QTimer, Qt
 
@@ -22,7 +22,7 @@ class OCRApp(QWidget):
      
         # Initialize team_containers
         self.team_containers = {}  # Add this line to define team_containers
-
+      
         # Initialize OCR running state
         self.is_ocr_running = False  
         self.is_paused = False
@@ -33,6 +33,7 @@ class OCRApp(QWidget):
 
         # Tabs erstellen
         self.tabs.addTab(self.create_control_tab(), "Main Control")
+        self.tabs.addTab(self.create_settings_tab(), "Score-Settings")
         self.tabs.addTab(self.create_video_tab(), "Video-Setup")
         self.tabs.addTab(self.create_log_tab(), "OCR-Process")
         self.tabs.addTab(self.create_table_tab(), "Table")
@@ -63,6 +64,11 @@ class OCRApp(QWidget):
         # Fenster anzeigen
         self.scoreboard_window.show()
 
+        # Tabelle beim Start aktualisieren
+        self.update_score_table()
+        self.update_score_list()
+
+
 
 
     # 🔹 Tab 1: Steuerung & Einstellungen
@@ -79,7 +85,7 @@ class OCRApp(QWidget):
 
         # Button-Größe anpassen
         for btn in [self.mode2_btn, self.mode3_btn, self.mode4_btn, self.mode6_btn]:
-            btn.setFixedSize(100, 40)  # Breite 120px, Höhe 40px
+            btn.setFixedSize(70, 40)  # Breite 120px, Höhe 40px
             btn.setStyleSheet("""
                 QPushButton {
                     background-color: #3671c9;
@@ -222,7 +228,33 @@ class OCRApp(QWidget):
 
 
 
-    # 🔹 Tab 2: Video-Setup
+    # 🔹 Tab 2: Scores als Liste und Einstellungen zum manuellen korrigieren
+    def create_settings_tab(self):
+        tab = QWidget()
+        layout = QVBoxLayout()
+
+        # 📊 Score-Liste
+        self.score_list_widget = QListWidget()
+        self.score_list_widget.setFixedSize(400, 300)
+        self.score_list_widget.setStyleSheet("""
+            QListWidget {  
+                background-color: #333;
+                color: white;
+                font-size: 24px;
+                border-radius: 5px;
+            }
+            QListWidget::item:selected {
+                background-color: #555;
+            }
+        """)
+        layout.addWidget(self.score_list_widget)
+
+        tab.setLayout(layout)
+        return tab
+
+
+
+    # 🔹 Tab 3: Video-Setup
     def create_video_tab(self):
         tab = QWidget()
         layout = QVBoxLayout()
@@ -308,14 +340,10 @@ class OCRApp(QWidget):
 
 
 
-    # 🔹 Tab 3: OCR-Prozesse
+    # 🔹 Tab 4: OCR-Prozesse
     def create_log_tab(self):
         tab = QWidget()
         layout = QVBoxLayout()
-
-        self.log_text = QTextEdit()
-        self.log_text.setReadOnly(True)
-        layout.addWidget(self.log_text)
 
         # 🎯 Originalbild mit erkanntem Text
         self.ocr_output_label = QLabel("📜 OCR-Result")
@@ -331,8 +359,9 @@ class OCRApp(QWidget):
         return tab
 
 
+
+    # Tab 5: für die Team-Tabelle hinzufügen
     def create_table_tab(self):
-        # Tab 4 für die Team-Tabelle hinzufügen
         tab = QWidget()
 
         # Layout für den neuen Tab
@@ -393,16 +422,29 @@ class OCRApp(QWidget):
         num_teams = 12 // self.selected_team_size  # Anzahl Teams berechnen
 
         for i in range(num_teams):
-            tag = self.team_tag_inputs[i].text().strip()
+            tag = self.team_tag_inputs[i].text().strip().upper()
             if tag:
                 self.team_tags[i] = tag
             else:
                 QMessageBox.warning(self,"Error", "Enter Every Team Tag!")
                 return
 
+        # Lade existierende Scores
+        saved_scores = self.load_team_scores()
+
+        # Setze für neue Teams die Punkte auf 0
+        for team in self.team_tags.values():
+            if team not in saved_scores:
+                saved_scores[team] = 0
+
+        # Speichere die aktualisierten Scores
+        self.save_team_scores(saved_scores)
+
         print("📌 Gespeicherte Team-Tags:", self.team_tags)
         self.condition1 = True
         self.check_conditions()
+        self.update_score_table()
+        self.update_score_list()
 
 
 
@@ -498,6 +540,7 @@ class OCRApp(QWidget):
             self.calculate_team_scores(players)
             self.increment_race_count()
             self.update_score_table()
+            self.update_score_list()
         else:
             print("⚠️ Keine Spieler erkannt!")
 
@@ -533,14 +576,7 @@ class OCRApp(QWidget):
         #return thresh 
 
 
-
-    #def find_team_by_name(self, player_name):
-     #   """Sucht nach einem gespeicherten Team-Tag basierend auf dem Spielernamen."""
-      #  for team_id, tag in self.team_tags.items():
-       #     if tag.upper() in player_name.upper():
-        #        return tag
-        #return "Unbekannt"
-    
+   
 
     def calculate_team_scores(self, players):
         """Berechnet die Punkte pro Team und speichert sie."""
@@ -556,19 +592,6 @@ class OCRApp(QWidget):
         self.save_team_scores(team_scores)  # Speichern der Ergebnisse
         self.load_team_scores()  # UI aktualisieren
 
-        # 🔹 Ergebnisse nach Punkten sortieren (höchste zuerst)
-        sorted_teams = sorted(team_scores.items(), key=lambda x: x[1], reverse=True)
-
-        # 🏆 Ergebnisse anzeigen
-        self.display_team_scores(sorted_teams)
-
-
-    def display_team_scores(self, sorted_teams):
-        """Zeigt die berechneten Team-Punkte in der OCR-Log-Tabelle an."""
-        self.log_text.clear()
-        self.log_text.append("\n🏆 Teamwertung: ")
-        for rank, (team, points) in enumerate(sorted_teams, start=1):
-            self.log_text.append(f"{rank}. {team}: {points} Punkte")
 
 
     def save_team_scores(self, team_scores):
@@ -630,9 +653,6 @@ class OCRApp(QWidget):
             json.dump({"race_count": race_count}, file)
 
         print(f"Rennenzähler erhöht: {race_count}")
-        # Optional: Aktualisiere ein UI-Element, z.B. ein Label:
-        #if hasattr(self, "race_count_label"):
-            #self.race_count_label.setText(f"Rennen: {race_count}")
 
 
     def load_race_count(self):
@@ -664,7 +684,8 @@ class OCRApp(QWidget):
         self.check_conditions()
         print("⛔ OCR-Prüfung gestoppt.")
         self.team_tags = {}  # Team-Tags zurücksetzen
-        self.update_score_table()  
+        self.update_score_table() 
+        self.update_score_list() 
 
 
     def reset_race_count(self):
@@ -673,9 +694,8 @@ class OCRApp(QWidget):
         with open(file_path, "w") as file:
             json.dump({"race_count": 0}, file)
         print("Rennenzähler zurückgesetzt auf 0")
-        # Optional: UI-Element aktualisieren
-        #if hasattr(self, "race_count_label"):
-            #self.race_count_label.setText("Rennen: 0")
+        self.update_score_list()
+
 
     # Manuelle OCR-Auslösung
     def capture_image_for_ocr(self):
@@ -718,7 +738,7 @@ class OCRApp(QWidget):
             elif player_name.endswith(team_tag):
                 return team_tag  # Nur zuordnen, wenn der Tag am Ende steht
         
-        return "unbekannt"  # Falls kein passendes Team gefunden wurde
+        return "Missing"  # Falls kein passendes Team gefunden wurde
     
 
     def update_score_table(self):
@@ -730,7 +750,9 @@ class OCRApp(QWidget):
         # Kapitel 1: Daten laden
         saved_scores = self.load_team_scores()
         race_count = self.load_race_count()
+        valid_teams = self.get_defined_teams()  # Nur definierte Teams zulassen
 
+        print("Definierte Teams",valid_teams)
         # Falls keine Daten vorhanden sind, setze Standardanzeige
         #if not saved_scores:
             #for container in self.team_containers.values():
@@ -739,8 +761,17 @@ class OCRApp(QWidget):
                 #bottom_box.setText("")
             #return
 
+        # Teams filtern (nur definierte Teams behalten)
+        filtered_scores = {team: points for team, points in saved_scores.items() if team in valid_teams}
+        print("🔍 Gefilterte Team-Punkte:", filtered_scores)
+
+        # Falls kein einziges gültiges Team übrig bleibt, breche ab
+        if not filtered_scores:
+            print("⚠️ Keine gültigen Teams gefunden. Tabelle bleibt leer.")
+            return
+
         # Kapitel 2: Sortiere Teams und bestimme Hauptteam
-        sorted_teams = self.get_sorted_teams(saved_scores)
+        sorted_teams = self.get_sorted_teams(filtered_scores)
         main_team = self.get_main_team()
 
         # Kapitel 3: Aktualisiere die UI-Elemente (wir gehen von 6 Container aus)
@@ -769,6 +800,13 @@ class OCRApp(QWidget):
                 team_box.setStyleSheet("background-color: rgba(0,0,0,0%);")
                 bottom_box.setText("")
 
+
+    def get_defined_teams(self):
+        """
+        Gibt die Liste der gültigen Teams zurück, die in den Eingaben definiert wurden.
+        """
+        return self.team_tags.values()
+    
 
     def get_sorted_teams(self, saved_scores):
         # Sortiere saved_scores (Dictionary) nach Punkten absteigend
@@ -873,6 +911,88 @@ class OCRApp(QWidget):
         if self.is_ocr_running:
             self.start_check_loop()
 
+
+    def update_score_list(self):
+        """ Erstellt die Liste mit Teams, Punkten und Buttons zum Anpassen. """
+        # Lade die Daten
+        saved_scores = self.load_team_scores()  # Holt die Team-Scores aus der JSON
+        races_done = self.load_race_count()  # Holt die Anzahl der Rennen
+
+        # Liste oder Textfeld zuerst **leeren**, damit keine alten Daten bleiben!
+        self.score_list_widget.clear()  # Falls du ein QListWidget nutzt
+        # self.score_textedit.clear()  # Falls du ein QTextEdit nutzt
+
+        # Füge die Rennanzahl als ersten Eintrag hinzu
+        self.score_list_widget.addItem(f"Races: {races_done}")
+
+        # 🔹 Erwartete Punkte = Anzahl der Rennen * 82
+        expected_points = races_done * 82
+        actual_points = sum(saved_scores.values())  # 🔹 Tatsächlich vergebene Punkte
+
+        for team, points in saved_scores.items():
+            # Widget für den Listeneintrag
+            item_widget = QWidget()
+            layout = QHBoxLayout(item_widget)
+
+            # Label für den Teamnamen & aktuelle Punktzahl
+            label = QLabel(f"{team}: {points} Points")
+
+            # Plus-Button (zum Punkte erhöhen)
+            plus_button = QPushButton("+")
+            plus_button.setFixedSize(30, 20)
+            plus_button.setStyleSheet("background-color: green; color: white;")
+            plus_button.clicked.connect(lambda _, t=team: self.adjust_team_score(t, 1))
+
+            # Minus-Button (zum Punkte verringern)
+            minus_button = QPushButton("-")
+            minus_button.setFixedSize(30, 20)
+            minus_button.setStyleSheet("background-color: red; color: white;")
+            minus_button.clicked.connect(lambda _, t=team: self.adjust_team_score(t, -1))
+
+            # Elemente anordnen
+            layout.addWidget(label)
+            layout.addWidget(plus_button)
+            layout.addWidget(minus_button)
+            layout.setContentsMargins(0, 0, 0, 0)
+            item_widget.setLayout(layout)
+
+            # Widget zur Liste hinzufügen
+            list_item = QListWidgetItem()
+            self.score_list_widget.addItem(list_item)
+            self.score_list_widget.setItemWidget(list_item, item_widget)
+
+        # 🔹 Punktdifferenz berechnen
+        point_difference = actual_points - expected_points
+
+
+        # 🔹 Falls Differenz ≠ 0, Fehleranzeige hinzufügen
+        if point_difference != 0:
+            diff_item = QListWidgetItem()
+            diff_label = QLabel(f"⚠ Points Issue: {point_difference} Points")
+            
+            # 🔹 Design anpassen (optional)
+            diff_label.setStyleSheet("color: red; font-weight: bold;")
+
+            self.score_list_widget.addItem(diff_item)
+            self.score_list_widget.setItemWidget(diff_item, diff_label)
+    
+
+
+    def adjust_team_score(self, team, amount):
+        """ Erhöht oder verringert die Punkte eines Teams und speichert die Änderung. """
+        saved_scores = self.load_team_scores()
+        
+        if team in saved_scores:
+            saved_scores[team] += amount  # Punkte anpassen
+            self.save_team_scores(saved_scores)  # Speichern
+            self.update_score_list()  # Liste aktualisieren
+            self.update_score_table()  # Tabelle ebenfalls updaten
+
+
+    def save_team_scores(self, scores):
+        """ Speichert die aktuellen Punktzahlen in die JSON-Datei. """
+        with open("team_scores.json", "w") as file:
+            json.dump(scores, file, indent=4)
 
 
 
