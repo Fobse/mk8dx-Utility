@@ -34,7 +34,7 @@ jobs:
           pyinstaller --name "Mk8dx-Utility" script.py
 
       - name: Artefakt hochladen
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: MeineApp-${{ runner.os }}
           path: dist/Mk8dx-Utility
