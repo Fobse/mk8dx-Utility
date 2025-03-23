@@ -28,7 +28,7 @@ jobs:
 
       - name: 🔨 Build Executable
         run: |
-          pyinstaller --onefile --windowed --name=MeineApp main.py
+          pyinstaller --onefile --windowed --name=MeineApp script.py
         shell: bash
 
       - name: 📤 Upload Executable
