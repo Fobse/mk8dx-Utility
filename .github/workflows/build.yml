@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🐍 Install Python
         uses: actions/setup-python@v4
@@ -32,7 +32,7 @@ jobs:
         shell: bash
 
       - name: 📤 Upload Executable
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: MeineApp-${{ matrix.os }}
           path: dist/MeineApp*
