@@ -3,7 +3,7 @@ This is a work in progress tool for the Mario Kart Scene, currently featuring:
 
 -  Automated Scoreboard for 8dx Lounge, Teammodes 2v2, 3v3, 4v4
 -  6v6 works aswell, requires a little Setup for special Clan-Tags, refer to the Tips below
--  [You can Download the Program from here](https://github.com/Fobse/mk8dx-Utility/releases)
+-  [You can Download the Program from here](https://github.com/Fobse/mk8dx-Utility/releases). Run the Executable File (You will get a security warning open first startup, you need to surpress it to use this Program) and wait for 2 windows to appear, it will take a while
 
 
 
