@@ -463,7 +463,7 @@ class OCRApp(QWidget):
         # 🔹 Bildverarbeitung mit OpenCV
         frame_resized = cv2.resize(frame, (1200 * 2, 675 * 2))  # Einheitliche Größe setzen
         frame_gray = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2GRAY)
-        _, thresh = cv2.threshold(frame_gray, 175, 255, cv2.THRESH_BINARY)
+        _, thresh = cv2.threshold(frame_gray, 176, 255, cv2.THRESH_BINARY)
         #morph = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, np.ones((1, 1), np.uint8))
 
         # 🔹 OCR-Bereich definieren
@@ -984,12 +984,12 @@ class OCRApp(QWidget):
         
         if team in saved_scores:
             saved_scores[team] += amount  # Punkte anpassen
-            self.save_team_scores(saved_scores)  # Speichern
+            self.save_adjusted_team_scores(saved_scores)  # Speichern
             self.update_score_list()  # Liste aktualisieren
             self.update_score_table()  # Tabelle ebenfalls updaten
 
 
-    def save_team_scores(self, scores):
+    def save_adjusted_team_scores(self, scores):
         """ Speichert die aktuellen Punktzahlen in die JSON-Datei. """
         with open("team_scores.json", "w") as file:
             json.dump(scores, file, indent=4)
