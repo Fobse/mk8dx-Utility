@@ -388,8 +388,8 @@ class OCRApp(QWidget):
             # **Untere Box mit Rennzahl und Differenz**
             bottom_box = QLabel()
             bottom_box.setFixedSize(80, 20)
-            bottom_box.setStyleSheet("font-size: 17px; font-weight: bold; text-align: left;")
-            bottom_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            bottom_box.setStyleSheet("font-size: 17px; font-weight: bold;")
+            bottom_box.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
             container_layout.addWidget(team_box)
             container_layout.addWidget(bottom_box)
@@ -783,17 +783,17 @@ class OCRApp(QWidget):
                 team_box.setText(f"{team_name} {team_points}")  # Concatenate team name and points
                 # Wenn das Team-Tag dem Hauptteam entspricht, wende den Gold-Stil an.
                 if team_name == main_team:
-                    team_box.setStyleSheet("border-radius: 5px; font-size: 26px; color: gold; text-align: center; background-color: rgba(20,20,20,50%);")
+                    team_box.setStyleSheet("border-radius: 5px; font-size: 22px; color: gold; background-color: rgba(20,20,20,50%);")
                 else:
-                    team_box.setStyleSheet("border-radius: 5px; font-size: 26px; color: rgb(240,240,240); text-align: center; background-color: rgba(20,20,20,50%);")
+                    team_box.setStyleSheet("border-radius: 5px; font-size: 22px; color: rgb(240,240,240); background-color: rgba(20,20,20,50%);")
                 # Untere Box: Für das erste Team zeige Rennen, sonst Differenz zum vorherigen Team
                 if i == 0:
                     bottom_box.setText(f"Races: {race_count}")
-                    bottom_box.setStyleSheet("color: #c23fd9; font-weight: bold; font-size: 17px; text-align: left;")
+                    bottom_box.setStyleSheet("color: #c23fd9; font-size: 17px; font-weight: bold;")
                 else:
                     diff = sorted_teams[i-1][1] - team_points
                     bottom_box.setText(f"-{diff}")
-                    bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px; text-align: left;")
+                    bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px; font-weight: bold;")
             else:
                 # Falls weniger Teams als Container vorhanden sind, leere die restlichen Container
                 team_box.setText("")
