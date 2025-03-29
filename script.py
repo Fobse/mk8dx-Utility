@@ -55,7 +55,7 @@ class OCRApp(QWidget):
             color: white;
         """)
 
-        self.setWindowTitle("mk8dx Scoreboard")
+        self.setWindowTitle("mk8dx Scoreboard v0.2")
         self.resize(800, 600)
 
         self.capture = None  # Speichert die aktive Capture Card
