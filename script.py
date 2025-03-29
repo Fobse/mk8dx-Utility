@@ -15,7 +15,11 @@ class OCRApp(QWidget):
 
         # 🔵 EasyOCR Reader einmalig initialisieren
         self.reader = easyocr.Reader(["en"])
-        self.readerjpn = easyocr.Reader(["ja"])
+        #self.readerjpn = easyocr.Reader(["ja"])
+
+        # Initialize hide_timer
+        self.hide_timer = QTimer()
+        self.hide_timer.timeout.connect(self.hide_scoreboard)
 
         # Initialize team_tags
         self.team_tags = {}
@@ -36,7 +40,8 @@ class OCRApp(QWidget):
         self.tabs.addTab(self.create_settings_tab(), "Score-Settings")
         self.tabs.addTab(self.create_video_tab(), "Video-Setup")
         self.tabs.addTab(self.create_log_tab(), "OCR-Process")
-        self.tabs.addTab(self.create_table_tab(), "Table")
+        #self.tabs.addTab(self.create_table_tab(), "Table")
+        self.tabs.addTab(self.create_table_settings_tab(), "Table-Settings")
 
         layout.addWidget(self.tabs)
         self.setLayout(layout)
@@ -76,12 +81,14 @@ class OCRApp(QWidget):
         tab = QWidget()
         layout = QVBoxLayout()
 
+
          # Modusauswahl
         mode_layout = QHBoxLayout()
         self.mode2_btn = QPushButton("2v2")
         self.mode3_btn = QPushButton("3v3")
         self.mode4_btn = QPushButton("4v4")
         self.mode6_btn = QPushButton("6v6")
+        
 
         # Button-Größe anpassen
         for btn in [self.mode2_btn, self.mode3_btn, self.mode4_btn, self.mode6_btn]:
@@ -116,8 +123,12 @@ class OCRApp(QWidget):
         self.team_tag_container = QVBoxLayout()
         layout.addLayout(self.team_tag_container)
 
-        # 🏆 "Tags speichern"-Button
+        # 🏆 "Tags speichern"-Button und Info-Button in einer Zeile
+        apply_btn_layout = QHBoxLayout()
+
+        # 🏆 "Apply Team-Tags"-Button
         self.apply_tags_btn = QPushButton("Apply Team-Tags")
+        self.apply_tags_btn.clicked.connect(self.apply_team_tags)
         self.apply_tags_btn.setFixedSize(200, 40)
         self.apply_tags_btn.setStyleSheet("""
             QPushButton {
@@ -130,14 +141,41 @@ class OCRApp(QWidget):
                 background-color: darkorange;
             }
         """)
-        self.apply_tags_btn.clicked.connect(self.apply_team_tags)
-        layout.addWidget(self.apply_tags_btn)
+        apply_btn_layout.addWidget(self.apply_tags_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # Start- und Reset-Buttons
-        self.start_btn = QPushButton("Start")
-        self.reset_btn = QPushButton("Reset")
+        # 🏆 "Info"-Button
+        applytags_info_button = QPushButton("i")
+        applytags_info_button.clicked.connect(lambda: self.show_info("""
+        Team1 will be shown in golden color.
+        Applying tags will update the Scoreboard.
+        For 6v6, run the manual trigger without tags and use the result from the process-tab.
+                                                                     
+        Team1 wird in goldener Farbe angezeigt.
+        Tags anwenden aktualisiert das Scoreboard.
+        Für 6v6, benutze den manuellen Trigger ohne Tags und trage das Ergebnis aus dem Prozess-Tab als Tag ein.                                                                                                                                                                               
+        """))
+        applytags_info_button.setFixedSize(20, 20)  
+        applytags_info_button.setStyleSheet("""
+            QPushButton {
+                background-color: lightblue;
+                color: black;
+                font-size: 18px;
+                border-radius: 10px;  /* Runde Form */
+            }
+            QPushButton:pressed {
+                background-color: blue;
+            }
+        """)
+        apply_btn_layout.addWidget(applytags_info_button, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        # Füge die Zeile mit den Buttons ins Hauptlayout ein
+        layout.addLayout(apply_btn_layout)
+
+
 
         # Start-Button Styling & Standardmäßig deaktiviert
+        start_btn_layout = QHBoxLayout()
+        self.start_btn = QPushButton("Start")
         self.start_btn.setFixedSize(150, 50)
         self.start_btn.setEnabled(False)  # Button erst deaktivieren!
         self.condition1 = False
@@ -160,8 +198,40 @@ class OCRApp(QWidget):
         """)
 
         self.start_btn.clicked.connect(self.toggle_ocr)
+        start_btn_layout.addWidget(self.start_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+
+            # 🏆 "Info"-Button
+        start_info_button = QPushButton("i")
+        start_info_button.setFixedSize(20, 20)  
+        start_info_button.setStyleSheet("""
+            QPushButton {
+                background-color: lightblue;
+                color: black;
+                font-size: 18px;
+                border-radius: 10px;  /* Runde Form */
+            }
+            QPushButton:pressed {
+                background-color: blue;
+            }
+        """)
+        start_info_button.clicked.connect(lambda: self.show_info("""
+        The program triggers with the 12th player shown.
+        After a successful run, the program is set on 120s cooldown, so you can freely browse your Library.
+                                                                 
+
+        Das Programm löst aus, wenn der 12. Spieler angezeigt wird.
+        Nach einem Lauf hat das Programm 120s Cooldown, damit du ohne Probleme in deine Galerie gucken kannst.                                                                                                                                                                                                                                 
+"""))
+        start_btn_layout.addWidget(start_info_button, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        # Füge die Zeile mit den Buttons ins Hauptlayout ein
+        layout.addLayout(start_btn_layout)
+
 
         # Reset Button Einstellungen
+        reset_btn_layout = QHBoxLayout()
+        self.reset_btn = QPushButton("Reset")
         self.reset_btn.clicked.connect(self.reset_scores)
         self.reset_btn.clicked.connect(self.reset_race_count)
         self.reset_btn.setFixedSize(100, 30)
@@ -177,9 +247,40 @@ class OCRApp(QWidget):
                 background-color: darkred;
             }
         """)
+        reset_btn_layout.addWidget(self.reset_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+
+                    # 🏆 "Info"-Button
+        reset_info_button = QPushButton("i")
+        reset_info_button.setFixedSize(20, 20)  
+        reset_info_button.setStyleSheet("""
+            QPushButton {
+                background-color: lightblue;
+                color: black;
+                font-size: 18px;
+                border-radius: 10px;  /* Runde Form */
+            }
+            QPushButton:pressed {
+                background-color: blue;
+            }
+        """)
+        reset_info_button.clicked.connect(lambda: self.show_info("""
+        Most of the Data is stored even if the program is closed, so make sure to Reset.
+        Reset will delete all Team-Tags, Scores, Racecount and will stop the Automatic Mode.
+
+        Die meisten Daten sind auch nach schließen des Programms gespeichert.
+        Reset löscht alle Team-Tags, Scores, Rennzähler und stoppt den Automatik-Modus.                                                                                                                                                                                                                                    
+        """))
+        reset_btn_layout.addWidget(reset_info_button, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        # Füge die Zeile mit den Buttons ins Hauptlayout ein
+        layout.addLayout(reset_btn_layout)
+
 
         # 🟢 Manueller OCR-Button
+        manualocr_btn_layout = QHBoxLayout()
         self.manual_ocr_btn = QPushButton("Manual Trigger")
+        self.manual_ocr_btn.clicked.connect(self.capture_image_for_ocr)
         self.manual_ocr_btn.setFixedSize(150, 40)
         self.manual_ocr_btn.setStyleSheet("""
             QPushButton { 
@@ -192,13 +293,38 @@ class OCRApp(QWidget):
                 background-color: #005A8C;
             }
             """)
-        self.manual_ocr_btn.clicked.connect(self.capture_image_for_ocr)
-
 
         # Buttons ins Layout setzen
-        layout.addWidget(self.start_btn)
-        layout.addWidget(self.reset_btn)
-        layout.addWidget(self.manual_ocr_btn)
+        manualocr_btn_layout.addWidget(self.manual_ocr_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+
+            # 🏆 "Info"-Button
+        manualocr_info_button = QPushButton("i")
+        manualocr_info_button.setFixedSize(20, 20)  
+        manualocr_info_button.setStyleSheet("""
+            QPushButton {
+                background-color: lightblue;
+                color: black;
+                font-size: 18px;
+                border-radius: 10px;  /* Runde Form */
+            }
+            QPushButton:pressed {
+                background-color: blue;
+            }
+        """)
+        manualocr_info_button.clicked.connect(lambda: self.show_info("""
+        Mainly kept for testing, feel free to use this to explore how the program works.
+        You can retrieve single races and after start the automatic, and also get results without tags. 
+
+        Sei eingeladen, hiermit auszuprobieren, wie das Programm funktioniert.
+        Du kannst einzelne Rennen einlesen und nachträglich die Automatik starten.
+        Ergebnisse werden auch ohne Tags angezeigt.                                                                                                                                                                                                                                                                                                                
+        """))
+        manualocr_btn_layout.addWidget(manualocr_info_button, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        # Füge die Zeile mit den Buttons ins Hauptlayout ein
+        layout.addLayout(manualocr_btn_layout)
+
 
         tab.setLayout(layout)
         return tab
@@ -234,6 +360,7 @@ class OCRApp(QWidget):
         layout = QVBoxLayout()
 
         # 📊 Score-Liste
+        scorelist_layout = QHBoxLayout()
         self.score_list_widget = QListWidget()
         self.score_list_widget.setFixedSize(400, 300)
         self.score_list_widget.setStyleSheet("""
@@ -247,7 +374,36 @@ class OCRApp(QWidget):
                 background-color: #555;
             }
         """)
-        layout.addWidget(self.score_list_widget)
+        scorelist_layout.addWidget(self.score_list_widget)
+
+            # 🏆 "Info"-Button
+        scorelist_info_button = QPushButton("i")
+        scorelist_info_button.setFixedSize(20, 20)  
+        scorelist_info_button.setStyleSheet("""
+            QPushButton {
+                background-color: lightblue;
+                color: black;
+                font-size: 18px;
+                border-radius: 10px;  /* Runde Form */
+            }
+            QPushButton:pressed {
+                background-color: blue;
+            }
+        """)
+        scorelist_info_button.clicked.connect(lambda: self.show_info("""
+        Here you will see all the Information collected.
+        "Missing" indicates players not being assigned to a team, make sure to look at the process-tab.
+        "Points Issue" indicates the total points not matching the racecount.
+
+        Hier siehst du alle gesammelten Informationen.
+        "Missing" zeigt Punkte von Spielern, die keinem Team zugeordnet werden konnten, schau dafür direkt in den Prozess-Tab.
+        "Points Issue" zeigt an, das die Gesamtzahl an Punkten nicht mit der Rennzahl übereinstimmt.                                                                                                                                                                                                                                                                                                              
+        """))
+        scorelist_layout.addWidget(scorelist_info_button, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        # Füge die Zeile mit den Buttons ins Hauptlayout ein
+        layout.addLayout(scorelist_layout)
+
 
         tab.setLayout(layout)
         return tab
@@ -258,6 +414,7 @@ class OCRApp(QWidget):
     def create_video_tab(self):
         tab = QWidget()
         layout = QVBoxLayout()
+        capture_layout = QHBoxLayout()
 
         self.capture_btn = QPushButton("Connect Capture Card")
         self.capture_btn.setFixedSize(200, 50)
@@ -273,7 +430,34 @@ class OCRApp(QWidget):
             }
         """)
         self.capture_btn.clicked.connect(self.find_capture_cards)  # Klick ruft `find_capture_cards()` auf
-        layout.addWidget(self.capture_btn)
+        capture_layout.addWidget(self.capture_btn)
+
+
+            # 🏆 "Info"-Button
+        capture_info_button = QPushButton("i")
+        capture_info_button.setFixedSize(20, 20)  
+        capture_info_button.setStyleSheet("""
+            QPushButton {
+                background-color: lightblue;
+                color: black;
+                font-size: 18px;
+                border-radius: 10px;  /* Runde Form */
+            }
+            QPushButton:pressed {
+                background-color: blue;
+            }
+        """)
+        capture_info_button.clicked.connect(lambda: self.show_info("""
+        The program searches for 10 external Video Devices connected to your Computer and lists what it finds.
+        You will see the active Device below, make sure to see your Game Capture.
+
+        Das Programm sucht nach 10 externen Video-Geräten angeschlossen an deinen Computer und listet sie auf. 
+        Das aktive Gerät wird unten angezeigt, stelle sicher, dass du deine Spielaufnahme siehst.                                                                                                                                                                                
+        """))
+        capture_layout.addWidget(capture_info_button, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        layout.addLayout(capture_layout)
+
 
         # 🎥 Dropdown für Capture-Device Auswahl
         self.device_select = QComboBox()
@@ -369,7 +553,11 @@ class OCRApp(QWidget):
 
         # **Haupt-Container für die Tabelle**
         self.table_wrapper = QWidget()
-        self.table_wrapper_layout = QHBoxLayout(self.table_wrapper)
+        if self.vertical_layout == True:
+            self.table_wrapper_layout = QVBoxLayout(self.table_wrapper)
+            self.table_wrapper_layout.setSpacing(0)
+        else:
+            self.table_wrapper_layout = QHBoxLayout(self.table_wrapper)
         layout.addWidget(self.table_wrapper, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # **Score-Tabelle für Teams**
@@ -389,10 +577,17 @@ class OCRApp(QWidget):
             bottom_box = QLabel()
             bottom_box.setFixedSize(80, 20)
             bottom_box.setStyleSheet("font-size: 17px; font-weight: bold;")
-            bottom_box.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            if self.vertical_layout == True:
+                bottom_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            else:
+                bottom_box.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-            container_layout.addWidget(team_box)
-            container_layout.addWidget(bottom_box)
+            if self.vertical_layout == True:
+                container_layout.addWidget(bottom_box)
+                container_layout.addWidget(team_box)
+            else:
+                container_layout.addWidget(team_box)
+                container_layout.addWidget(bottom_box)
             container.setLayout(container_layout)
 
             self.table_wrapper_layout.addWidget(container)
@@ -401,6 +596,225 @@ class OCRApp(QWidget):
 
         tab.setLayout(layout)
         return tab
+    
+
+    # Tab 6: Einstellungen für das Scoreboard
+    def create_table_settings_tab(self):
+        tab = QWidget()
+        layout = QVBoxLayout()
+
+        # Initiale Booleans für die beiden Buttons
+        self.show_race_count = True
+        self.show_difference = True
+        self.fade_in = True
+        # Layout-Zustand laden
+        self.load_layout_state()
+
+        # Erster Button (Rennzähler)
+        self.race_count_button = QPushButton("Racecount: On")
+        self.race_count_button.setFixedSize(150, 20)
+        self.race_count_button.clicked.connect(self.toggle_race_count)
+        self.update_button_style(self.race_count_button, self.show_race_count)
+
+        # Zweiter Button (Differenz)
+        self.difference_button = QPushButton("Difference: On")
+        self.difference_button.clicked.connect(self.toggle_difference)
+        self.difference_button.setFixedSize(150, 20)
+        self.update_button_style(self.difference_button, self.show_difference)
+
+        # Buttons in den Tab einfügen
+        settings_layout = QHBoxLayout()
+        settings_layout.addWidget(self.race_count_button)
+        settings_layout.addWidget(self.difference_button)
+
+        # Buttons ins Layout einfügen
+        layout.addLayout(settings_layout)
+
+
+        # Fade-In Button
+        self.fade_in_button = QPushButton("Fade-In: Off")
+        self.fade_in_button.setFixedSize(150, 20)
+        self.fade_in_button.clicked.connect(self.toggle_fade_in)
+        self.update_button_style_inverted(self.fade_in_button, self.fade_in)
+
+        
+        settings_layout2 = QHBoxLayout()
+        settings_layout2.addWidget(self.fade_in_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+            # 🏆 "Info"-Button
+        fadein_info_button = QPushButton("i")
+        fadein_info_button.setFixedSize(20, 20)  
+        fadein_info_button.setStyleSheet("""
+            QPushButton {
+                background-color: lightblue;
+                color: black;
+                font-size: 18px;
+                border-radius: 10px;  /* Runde Form */
+            }
+            QPushButton:pressed {
+                background-color: blue;
+            }
+        """)
+        fadein_info_button.clicked.connect(lambda: self.show_info("""
+        This Setting will make the Scoreboard appear everytime it updates.
+        After 60s of downtime, the Scoreboard disappears.
+
+        Diese Einstellung lässt das Scoreboard erscheinen, wenn es aktualisiert wird.
+        Nach 60s ohne Aktivität verschwindet das Scoreboard.                                                                                                                                                                              
+        """))
+        settings_layout2.addWidget(fadein_info_button, alignment=Qt.AlignmentFlag.AlignLeft)
+
+
+        layout.addLayout(settings_layout2)
+
+
+        # Vertikales Layout Button
+        self.vertical_layout_button = QPushButton("Vertical Layout")
+        self.vertical_layout_button.setFixedSize(150, 20)
+        self.vertical_layout_button.clicked.connect(self.toggle_vertical_layout)
+        self.update_button_style(self.vertical_layout_button, self.vertical_layout)
+
+        settings_layout3 = QHBoxLayout()
+        settings_layout3.addWidget(self.vertical_layout_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+
+            # 🏆 "Info"-Button
+        verticallayout_info_button = QPushButton("i")
+        verticallayout_info_button.setFixedSize(20, 20)
+        verticallayout_info_button.setStyleSheet("""
+            QPushButton {
+                background-color: lightblue;
+                color: black;
+                font-size: 18px;
+                border-radius: 10px;  /* Runde Form */
+            }
+            QPushButton:pressed {
+                background-color: blue;
+            }
+        """)
+        verticallayout_info_button.clicked.connect(lambda: self.show_info("""
+        This changes the appearance of the Scoreboard.
+        You HAVE to restart the program to apply the changes.  
+
+        Das verändert das Aussehen des Scoreboards.
+        Du MUSST das Programm neu starten, um die Änderungen anzuwenden.                                                                                                                                                                                                                                                                      
+        """))
+        settings_layout3.addWidget(verticallayout_info_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        
+        layout.addLayout(settings_layout3)
+
+
+        tab.setLayout(layout)
+        return tab
+    
+
+
+    def update_button_style(self, button, state):
+        # Farbe und Text abhängig vom Zustand
+        if state:
+            button.setStyleSheet("background-color: rgb(49, 176, 64); color: white; font-size: 14px; border-radius: 5px;")
+        else:
+            button.setStyleSheet("background-color: rgb(136, 133, 133); color: white; font-size: 14px; border-radius: 5px;")
+
+
+    def update_button_style_inverted(self, button, state):
+        # Farbe und Text abhängig vom Zustand
+        if state:
+            button.setStyleSheet("background-color: rgb(136, 133, 133); color: white; font-size: 14px; border-radius: 5px;")
+        else:
+            button.setStyleSheet("background-color: rgb(49, 176, 64); color: white; font-size: 14px; border-radius: 5px;")
+
+
+    def toggle_race_count(self):
+        # Toggle Boolean
+        self.show_race_count = not self.show_race_count
+        # Text aktualisieren
+        status = "On" if self.show_race_count else "Off"
+        self.race_count_button.setText(f"Racecount: {status}")
+        print(f"Rennzähler ist jetzt: {self.show_race_count}")
+        # Style aktualisieren
+        self.update_button_style(self.race_count_button, self.show_race_count)
+
+
+    def toggle_difference(self):
+        # Toggle Boolean
+        self.show_difference = not self.show_difference
+        # Text aktualisieren
+        status = "On" if self.show_difference else "Off"
+        self.difference_button.setText(f"Difference: {status}")
+        print(f"Differenz ist jetzt: {self.show_difference}")
+        # Style aktualisieren
+        self.update_button_style(self.difference_button, self.show_difference)
+
+
+    def toggle_fade_in(self):
+        # Toggle Boolean
+        self.fade_in = not self.fade_in
+        self.table_wrapper.setVisible(self.fade_in)  # Sichtbarkeit des Scoreboards ändern
+        # Text aktualisieren
+        status = "Off" if self.fade_in else "On"
+        self.fade_in_button.setText(f"Fade-In: {status}")
+        print(f"Fade-In ist jetzt: {self.fade_in}")
+        # Style aktualisieren
+        self.update_button_style_inverted(self.fade_in_button, self.fade_in)
+
+    def show_scoreboard_temp(self):
+        """Zeigt das Scoreboard temporär nach einem Rennen."""
+        if not self.fade_in:  
+            self.table_wrapper.setVisible(True)
+
+            # Falls ein Timer schon läuft, stoppen
+            if hasattr(self, 'hide_timer') and self.hide_timer.isActive():
+                self.hide_timer.stop()
+
+            # Timer erstellen, wenn er nicht existiert
+            if not hasattr(self, 'hide_timer'):
+                self.hide_timer = QTimer()
+                self.hide_timer.timeout.connect(self.hide_scoreboard)
+
+            # Timer für 60 Sekunden starten
+        self.hide_timer.start(60000)
+
+    def hide_scoreboard(self):
+        """Blendet das Scoreboard nach Ablauf des Timers aus."""
+        if not self.fade_in:  # Nur verstecken, wenn nicht manuell sichtbar
+            self.table_wrapper.setVisible(False)
+
+
+    def toggle_vertical_layout(self):
+        # Toggle Boolean
+        self.vertical_layout = not self.vertical_layout
+        # Text aktualisieren
+        status = "On" if self.vertical_layout else "Off"
+        self.vertical_layout_button.setText(f"Vertical Layout: {status}")
+        print(f"Vertikales Layout ist jetzt: {self.vertical_layout}")
+        # Style aktualisieren
+        self.update_button_style(self.vertical_layout_button, self.vertical_layout)
+        self.save_layout_state()  # Zustand speichern
+
+    def save_layout_state(self):
+        """Speichert den Zustand des Layouts in einer JSON-Datei."""
+        file_path = "layout_state.json"
+        state = {"vertical_layout": self.vertical_layout}
+        with open(file_path, "w") as file:
+            json.dump(state, file)
+        print(f"💾 Layout-Zustand gespeichert: {state}")
+
+    def load_layout_state(self):
+        """Lädt den Zustand des Layouts aus einer JSON-Datei."""
+        file_path = "layout_state.json"
+        if os.path.exists(file_path):
+            with open(file_path, "r") as file:
+                try:
+                    state = json.load(file)
+                    self.vertical_layout = state.get("vertical_layout", False)
+                    print(f"📂 Layout-Zustand geladen: {state}")
+                except json.JSONDecodeError:
+                    self.vertical_layout = False
+                    print("⚠️ Fehler beim Laden des Layout-Zustands. Standardwert wird verwendet.")
+        else:
+            self.vertical_layout = False
+            print("📂 Keine Layout-Zustandsdatei gefunden. Standardwert wird verwendet.")
 
 
 
@@ -436,9 +850,8 @@ class OCRApp(QWidget):
         for team in self.team_tags.values():
             if team not in saved_scores:
                 saved_scores[team] = 0
+                self.save_team_scores({team: 0})  # Speichern mit 0 Punkten
 
-        # Speichere die aktualisierten Scores
-        self.save_team_scores(saved_scores)
 
         print("📌 Gespeicherte Team-Tags:", self.team_tags)
         self.condition1 = True
@@ -752,14 +1165,9 @@ class OCRApp(QWidget):
         race_count = self.load_race_count()
         valid_teams = self.get_defined_teams()  # Nur definierte Teams zulassen
 
+        self.show_scoreboard_temp()  # Zeige Scoreboard temporär an
+
         print("Definierte Teams",valid_teams)
-        # Falls keine Daten vorhanden sind, setze Standardanzeige
-        #if not saved_scores:
-            #for container in self.team_containers.values():
-                #team_box, bottom_box = container
-                #team_box.setText("0")
-                #bottom_box.setText("")
-            #return
 
         # Teams filtern (nur definierte Teams behalten)
         filtered_scores = {team: points for team, points in saved_scores.items() if team in valid_teams}
@@ -788,12 +1196,20 @@ class OCRApp(QWidget):
                     team_box.setStyleSheet("border-radius: 5px; font-size: 22px; color: rgb(240,240,240); background-color: rgba(20,20,20,50%);")
                 # Untere Box: Für das erste Team zeige Rennen, sonst Differenz zum vorherigen Team
                 if i == 0:
-                    bottom_box.setText(f"Races: {race_count}")
-                    bottom_box.setStyleSheet("color: #c23fd9; font-size: 17px; font-weight: bold;")
+                    if self.show_race_count == True:
+                        bottom_box.setText(f"Races: {race_count}")
+                        bottom_box.setStyleSheet("color: #c23fd9; font-size: 17px; font-weight: bold;")
+                    else:
+                        bottom_box.setText("")
+                        bottom_box.setStyleSheet("color: rgba(0,0,0,0%); font-size: 17px; font-weight: bold;")
                 else:
                     diff = sorted_teams[i-1][1] - team_points
-                    bottom_box.setText(f"-{diff}")
-                    bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px; font-weight: bold;")
+                    if self.show_difference == True:
+                        bottom_box.setText(f"-{diff}")
+                        bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px; font-weight: bold; background-color: rgba(20,20,20,50%);")
+                    else:
+                        bottom_box.setText("")
+                        bottom_box.setStyleSheet("color: rgba(0,0,0,0%); font-size: 17px; font-weight: bold;")
             else:
                 # Falls weniger Teams als Container vorhanden sind, leere die restlichen Container
                 team_box.setText("")
@@ -839,7 +1255,7 @@ class OCRApp(QWidget):
         if not self.is_ocr_running or self.is_paused:
             return
         self.capture_and_process_image()
-        QTimer.singleShot(1000, self.start_check_loop)
+        QTimer.singleShot(800, self.start_check_loop)
 
 
     def capture_and_process_image(self):
@@ -995,6 +1411,17 @@ class OCRApp(QWidget):
             json.dump(scores, file, indent=4)
 
 
+    # Info Buttons
+    def show_info(self, text):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Icon.Information)
+        msg.setWindowTitle("Info")
+        msg.setText(text)
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg.exec()
+
+
+
 
 
 
@@ -1004,7 +1431,7 @@ class ScoreboardWindow(QWidget):
         self.setWindowTitle("Scoreboard OBS Cleanfeed")
 
         # **Größe des Fensters anpassen**
-        self.setFixedSize(800, 300)  # Größe der Tabelle
+        self.setFixedSize(700, 580)  # Größe der Tabelle
 
         # **Hintergrundfarbe setzen (z. B. grelles Grün für Chroma Key)**
         #self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)  # Transparenz aktivieren
@@ -1022,6 +1449,7 @@ class ScoreboardWindow(QWidget):
     def set_table_widget(self, table_widget):
         """Setzt die Score-Tabelle ins Fenster."""
         self.layout.addWidget(table_widget)
+
 
 
 
