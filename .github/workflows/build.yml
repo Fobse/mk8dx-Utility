@@ -31,7 +31,7 @@ jobs:
 
       - name: Erstelle Build mit PyInstaller
         run: |
-          pyinstaller --onefile --windowed --name "Mk8dx-Utility-v0.2" script.py
+          pyinstaller --onefile --windowed --name "Mk8dx-Utility0.2" script.py
 
       - name: Artefakt hochladen
         uses: actions/upload-artifact@v4
