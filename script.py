@@ -1206,7 +1206,7 @@ class OCRApp(QWidget):
                     diff = sorted_teams[i-1][1] - team_points
                     if self.show_difference == True:
                         bottom_box.setText(f"-{diff}")
-                        bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px; font-weight: bold; background-color: rgba(20,20,20,50%);")
+                        bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px; font-weight: bold;")
                     else:
                         bottom_box.setText("")
                         bottom_box.setStyleSheet("color: rgba(0,0,0,0%); font-size: 17px; font-weight: bold;")
