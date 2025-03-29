@@ -24,6 +24,7 @@ The results of detection will always be shown in the tab "Process"
 
 The program currently only supports english language, so only Romanian letters and simple symbols (e.g. (),",[],/)
 
+Team-Tags at the end of a name are supported, as long as everybody follows the Rules. When shortening Tags for the Scoreboard, make sure to go from the outside. So for Tags at the end of the Name, e.g. playername.ABC, if you want to shorten the Tag "ABC" to two Characters, use BC
 
 <h3 align="center" >Setting Up</h3>
 
