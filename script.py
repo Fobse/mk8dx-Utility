@@ -55,7 +55,7 @@ class OCRApp(QWidget):
             color: white;
         """)
 
-        self.setWindowTitle("mk8dx Scoreboard v0.2")
+        self.setWindowTitle("mk8dx Scoreboard v0.2.1")
         self.resize(800, 600)
 
         self.capture = None  # Speichert die aktive Capture Card
@@ -114,7 +114,7 @@ class OCRApp(QWidget):
         self.mode2_btn.clicked.connect(lambda: self.set_team_size(2))
         self.mode3_btn.clicked.connect(lambda: self.set_team_size(3))
         self.mode4_btn.clicked.connect(lambda: self.set_team_size(4))
-        self.mode6_btn.clicked.connect(lambda: self.set_team_size(5))
+        self.mode6_btn.clicked.connect(lambda: self.set_team_size(6))
 
 
         layout.addLayout(mode_layout)
@@ -607,6 +607,7 @@ class OCRApp(QWidget):
         self.show_race_count = True
         self.show_difference = True
         self.fade_in = True
+        self.difference_behaviour = True
         # Layout-Zustand laden
         self.load_layout_state()
 
@@ -702,6 +703,42 @@ class OCRApp(QWidget):
         settings_layout3.addWidget(verticallayout_info_button, alignment=Qt.AlignmentFlag.AlignLeft)
         
         layout.addLayout(settings_layout3)
+
+
+        # Differenzverhalten Button
+        self.difference_behaviour_button = QPushButton("Difference: To Team1")
+        self.difference_behaviour_button.setFixedSize(180, 20)
+        self.difference_behaviour_button.clicked.connect(self.toggle_difference_behaviour)
+        self.update_button_style(self.difference_behaviour_button, self.difference_behaviour)
+
+        settings_layout4 = QHBoxLayout()
+        settings_layout4.addWidget(self.difference_behaviour_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+
+            # 🏆 "Info"-Button
+        difference_behaviour_info_button = QPushButton("i")
+        difference_behaviour_info_button.setFixedSize(20, 20)
+        difference_behaviour_info_button.setStyleSheet("""
+            QPushButton {
+                background-color: lightblue;
+                color: black;
+                font-size: 18px;
+                border-radius: 10px;  /* Runde Form */
+            }
+            QPushButton:pressed {
+                background-color: blue;
+            }
+        """)
+        difference_behaviour_info_button.clicked.connect(lambda: self.show_info("""
+        Difference To Team1 calculates the Difference from Team1 to all other Teams.
+        Difference between Teams calculates the Differences between each individual pair of Teams.  
+
+        Difference To Team1 berechnet die Differenz von Team1 zu jedem anderen Team.
+        Difference between Teams berechnet die Differenzen jeweils zwischen den einzelnen Teams.                                                                                                                                                                                                                                                                      
+        """))
+        settings_layout4.addWidget(difference_behaviour_info_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        
+        layout.addLayout(settings_layout4)
 
 
         tab.setLayout(layout)
@@ -817,6 +854,17 @@ class OCRApp(QWidget):
             print("📂 Keine Layout-Zustandsdatei gefunden. Standardwert wird verwendet.")
 
 
+    def toggle_difference_behaviour(self):
+        # Toggle Boolean
+        self.difference_behaviour = not self.difference_behaviour
+        # Text aktualisieren
+        status = "To Team1" if self.difference_behaviour else "between Teams"
+        self.difference_behaviour_button.setText(f"Difference: {status}")
+        print(f"Differenz ist jetzt: {self.difference_behaviour}")
+        # Style aktualisieren
+        self.update_button_style(self.difference_behaviour_button, self.difference_behaviour)
+
+
 
     def check_conditions(self):
         if self.condition1 and self.condition2:
@@ -876,12 +924,12 @@ class OCRApp(QWidget):
         # 🔹 Bildverarbeitung mit OpenCV
         frame_resized = cv2.resize(frame, (1200 * 2, 675 * 2))  # Einheitliche Größe setzen
         frame_gray = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2GRAY)
-        _, thresh = cv2.threshold(frame_gray, 176, 255, cv2.THRESH_BINARY)
-        #morph = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, np.ones((1, 1), np.uint8))
+        _, thresh = cv2.threshold(frame_gray, 192, 255, cv2.THRESH_BINARY)
+        morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, np.ones((2, 2), np.uint8))
 
         # 🔹 OCR-Bereich definieren
-        start_x, width = 634 * 2, 190 * 2
-        start_y, row_height = 50 * 2, 47 * 2
+        start_x, width = 634 * 2, 220 * 2
+        start_y, row_height = 53 * 2, 33 * 2
         num_players = 12
         placement_points = [15, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 
@@ -892,8 +940,8 @@ class OCRApp(QWidget):
         roi_combined = np.zeros((num_players * row_height, width), dtype=np.uint8)  # Leeres Bild für ROIs
 
         for i in range(num_players):
-            y1 = start_y + i * (row_height + 2)
-            roi = thresh[y1:y1 + row_height, start_x:start_x + width]
+            y1 = start_y + i * (row_height + 32)
+            roi = morph[y1:y1 + row_height, start_x:start_x + width]
             
             # 🏆 OCR ausführen
             result = self.reader.readtext(roi, detail=0, text_threshold=0.3, low_text=0.2)
@@ -1181,6 +1229,8 @@ class OCRApp(QWidget):
         # Kapitel 2: Sortiere Teams und bestimme Hauptteam
         sorted_teams = self.get_sorted_teams(filtered_scores)
         main_team = self.get_main_team()
+        main_team_score = dict(sorted_teams).get(main_team, 0)  # Punkte des Hauptteams
+        diff_mainteam = False
 
         # Kapitel 3: Aktualisiere die UI-Elemente (wir gehen von 6 Container aus)
         # Wir iterieren über 6 Container, auch wenn es weniger Teams gibt.
@@ -1203,13 +1253,34 @@ class OCRApp(QWidget):
                         bottom_box.setText("")
                         bottom_box.setStyleSheet("color: rgba(0,0,0,0%); font-size: 17px; font-weight: bold;")
                 else:
-                    diff = sorted_teams[i-1][1] - team_points
-                    if self.show_difference == True:
-                        bottom_box.setText(f"-{diff}")
-                        bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px; font-weight: bold;")
+                    if self.difference_behaviour == True:
+                        if sorted_teams[i-1][1] == main_team_score:
+                            diff_mainteam = True
+                        if diff_mainteam == False:
+                            diff = main_team_score - sorted_teams[i-1][1]
+                            if self.show_difference == True:
+                                bottom_box.setText(f"{diff}")
+                                bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px; font-weight: bold;")
+                            else:
+                                bottom_box.setText("")
+                                bottom_box.setStyleSheet("color: rgba(0,0,0,0%); font-size: 17px; font-weight: bold;")
+
+                        if diff_mainteam == True:
+                            diff2 = main_team_score - sorted_teams[i][1]
+                            if self.show_difference == True:
+                                bottom_box.setText(f"+{diff2}")
+                                bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px; font-weight: bold;")
+                            else:
+                                bottom_box.setText("")
+                                bottom_box.setStyleSheet("color: rgba(0,0,0,0%); font-size: 17px; font-weight: bold;")
                     else:
-                        bottom_box.setText("")
-                        bottom_box.setStyleSheet("color: rgba(0,0,0,0%); font-size: 17px; font-weight: bold;")
+                        diff3 = sorted_teams[i-1][1] - team_points
+                        if self.show_difference == True:
+                            bottom_box.setText(f"-{diff3}")
+                            bottom_box.setStyleSheet("color: rgb(252,55,55); font-size: 17px; font-weight: bold;")
+                        else:
+                            bottom_box.setText("")
+                            bottom_box.setStyleSheet("color: rgba(0,0,0,0%); font-size: 17px; font-weight: bold;")
             else:
                 # Falls weniger Teams als Container vorhanden sind, leere die restlichen Container
                 team_box.setText("")
